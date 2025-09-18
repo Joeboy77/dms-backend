@@ -10,41 +10,46 @@ class SupervisorController:
         self.collection = db["supervisors"]
 
     async def get_all_supervisors(self, limit: int = 10, cursor: str | None = None):
-        # Get all lecturers who have supervisor role in logins
-        supervisor_role_id = "684b0436cb438526c6aea950"
-        supervisor_logins = await self.db["logins"].find({"roles": ObjectId(supervisor_role_id)}).to_list(None)
-
-        supervisors = []
-        count = 0
-
-        for login in supervisor_logins:
-            if cursor and count < int(cursor):
-                count += 1
-                continue
-
-            if len(supervisors) >= limit:
-                break
-
-            # Get lecturer details using academicId
-            lecturer = await self.db["lecturers"].find_one({"academicId": login["academicId"]})
-            if lecturer:
-                # Count students supervised by this lecturer
-                student_count = await self.db["fyps"].count_documents({"supervisor": lecturer["_id"]})
-
-                supervisor_data = {
-                    "_id": lecturer["_id"],
-                    "lecturer_id": lecturer["_id"],
-                    "max_students": lecturer.get("max_students"),
-                    "project_student_count": student_count,
-                    "created_at": lecturer.get("createdAt"),
-                    "updated_at": lecturer.get("updatedAt"),
-                    "academic_id": login["academicId"]
+        # Use the dedicated supervisors collection with aggregation to get lecturer details
+        skip_count = int(cursor) if cursor else 0
+        
+        pipeline = [
+            {"$skip": skip_count},
+            {"$limit": limit + 1},  # Get one extra to check if there's a next page
+            {
+                "$lookup": {
+                    "from": "lecturers",
+                    "localField": "lecturer_id",
+                    "foreignField": "_id",
+                    "as": "lecturer"
                 }
-                supervisors.append(supervisor_data)
-
+            },
+            {"$unwind": "$lecturer"},
+            {
+                "$match": {
+                    "lecturer.deleted": {"$ne": True}
+                }
+            },
+            {
+                "$project": {
+                    "_id": 1,
+                    "lecturer_id": 1,
+                    "max_students": 1,
+                    "project_student_count": 1,
+                    "createdAt": 1,
+                    "updatedAt": 1,
+                    "academic_id": "$lecturer.academicId"
+                }
+            }
+        ]
+        
+        supervisors = await self.collection.aggregate(pipeline).to_list(length=limit + 1)
+        
+        # Check if there's a next page
         next_cursor = None
-        if len(supervisors) == limit:
-            next_cursor = str(count + limit)
+        if len(supervisors) > limit:
+            supervisors = supervisors[:limit]  # Remove the extra item
+            next_cursor = str(skip_count + limit)
 
         return {
             "items": supervisors,
@@ -52,35 +57,41 @@ class SupervisorController:
         }
 
     async def get_supervisor_by_id(self, supervisor_id: str):
-        # Get lecturer details
-        lecturer = await self.db["lecturers"].find_one({"_id": ObjectId(supervisor_id)})
-        if not lecturer:
-            raise HTTPException(status_code=404, detail="Lecturer not found")
-
-        # Check if lecturer has supervisor role
-        supervisor_role_id = "684b0436cb438526c6aea950"
-        login = await self.db["logins"].find_one({
-            "academicId": lecturer.get("academicId"),
-            "roles": ObjectId(supervisor_role_id)
-        })
-
-        if not login:
-            raise HTTPException(status_code=404, detail="Supervisor role not found for this lecturer")
-
-        # Count students supervised by this lecturer
-        student_count = await self.db["fyps"].count_documents({"supervisor": lecturer["_id"]})
-
-        supervisor_data = {
-            "_id": lecturer["_id"],
-            "lecturer_id": lecturer["_id"],
-            "max_students": lecturer.get("max_students"),
-            "project_student_count": student_count,
-            "created_at": lecturer.get("createdAt"),
-            "updated_at": lecturer.get("updatedAt"),
-            "academic_id": lecturer.get("academicId")
-        }
-
-        return supervisor_data
+        # Get supervisor from the dedicated supervisors collection
+        pipeline = [
+            {"$match": {"_id": ObjectId(supervisor_id)}},
+            {
+                "$lookup": {
+                    "from": "lecturers",
+                    "localField": "lecturer_id",
+                    "foreignField": "_id",
+                    "as": "lecturer"
+                }
+            },
+            {"$unwind": "$lecturer"},
+            {
+                "$match": {
+                    "lecturer.deleted": {"$ne": True}
+                }
+            },
+            {
+                "$project": {
+                    "_id": 1,
+                    "lecturer_id": 1,
+                    "max_students": 1,
+                    "project_student_count": 1,
+                    "createdAt": 1,
+                    "updatedAt": 1,
+                    "academic_id": "$lecturer.academicId"
+                }
+            }
+        ]
+        
+        result = await self.collection.aggregate(pipeline).to_list(length=1)
+        if not result:
+            raise HTTPException(status_code=404, detail="Supervisor not found")
+        
+        return result[0]
 
     async def create_supervisor(self, supervisor_data: dict):
         # Convert lecturer_id to ObjectId if it's a string
@@ -104,7 +115,8 @@ class SupervisorController:
         created_supervisor = await self.collection.find_one({"_id": result.inserted_id})
 
         # Add project student count
-        created_supervisor["project_student_count"] = 0
+        if created_supervisor:
+            created_supervisor["project_student_count"] = 0
 
         return created_supervisor
 
@@ -137,8 +149,9 @@ class SupervisorController:
         updated_supervisor = await self.collection.find_one({"_id": ObjectId(supervisor_id)})
 
         # Add project student count
-        count = await self.db["fyps"].count_documents({"supervisor": updated_supervisor["_id"]})
-        updated_supervisor["project_student_count"] = count
+        if updated_supervisor:
+            count = await self.db["fyps"].count_documents({"supervisor": updated_supervisor["lecturer_id"]})
+            updated_supervisor["project_student_count"] = count
 
         return updated_supervisor
 
@@ -163,53 +176,64 @@ class SupervisorController:
         }
 
     async def get_all_supervisors_with_lecturer_details(self, limit: int = 10, cursor: str | None = None):
-        # Get all lecturers who have supervisor role in logins
-        supervisor_role_id = "684b0436cb438526c6aea950"
-        supervisor_logins = await self.db["logins"].find({"roles": ObjectId(supervisor_role_id)}).to_list(None)
-
-        supervisors_with_details = []
-        count = 0
-
-        for login in supervisor_logins:
-            if cursor and count < int(cursor):
-                count += 1
-                continue
-
-            if len(supervisors_with_details) >= limit:
-                break
-
-            # Get lecturer details using academicId
-            lecturer = await self.db["lecturers"].find_one({"academicId": login["academicId"]})
-            if lecturer:
-                # Count students supervised by this lecturer
-                student_count = await self.db["fyps"].count_documents({"supervisor": lecturer["_id"]})
-
-                # Create full name from surname and otherNames
-                lecturer_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
-
-                supervisor_with_details = {
-                    "_id": str(lecturer["_id"]),
-                    "lecturer_id": str(lecturer["_id"]),
-                    "max_students": lecturer.get("max_students"),
-                    "project_student_count": student_count,
-                    "createdAt": lecturer.get("createdAt"),
-                    "updatedAt": lecturer.get("updatedAt"),
-                    "lecturer_name": lecturer_name,
-                    "lecturer_email": lecturer.get("email", ""),
-                    "lecturer_phone": lecturer.get("phone"),
-                    "lecturer_position": lecturer.get("position"),
-                    "lecturer_title": lecturer.get("title"),
-                    "lecturer_bio": lecturer.get("bio"),
-                    "lecturer_office_hours": lecturer.get("officeHours"),
-                    "lecturer_office_location": lecturer.get("officeLocation"),
-                    "academic_id": lecturer.get("academicId", "")
+        # Use the dedicated supervisors collection with aggregation to get full lecturer details
+        skip_count = int(cursor) if cursor else 0
+        
+        pipeline = [
+            {"$skip": skip_count},
+            {"$limit": limit + 1},  # Get one extra to check if there's a next page
+            {
+                "$lookup": {
+                    "from": "lecturers",
+                    "localField": "lecturer_id",
+                    "foreignField": "_id",
+                    "as": "lecturer"
                 }
-                supervisors_with_details.append(supervisor_with_details)
-                count += 1
-
+            },
+            {"$unwind": "$lecturer"},
+            {
+                "$match": {
+                    "lecturer.deleted": {"$ne": True}
+                }
+            },
+            {
+                "$project": {
+                    "_id": {"$toString": "$_id"},
+                    "lecturer_id": {"$toString": "$lecturer_id"},
+                    "max_students": 1,
+                    "project_student_count": 1,
+                    "createdAt": 1,
+                    "updatedAt": 1,
+                    "lecturer_name": {
+                        "$trim": {
+                            "input": {
+                                "$concat": [
+                                    {"$ifNull": ["$lecturer.surname", ""]},
+                                    " ",
+                                    {"$ifNull": ["$lecturer.otherNames", ""]}
+                                ]
+                            }
+                        }
+                    },
+                    "lecturer_email": "$lecturer.email",
+                    "lecturer_phone": "$lecturer.phone",
+                    "lecturer_position": "$lecturer.position",
+                    "lecturer_title": "$lecturer.title",
+                    "lecturer_bio": "$lecturer.bio",
+                    "lecturer_office_hours": "$lecturer.officeHours",
+                    "lecturer_office_location": "$lecturer.officeLocation",
+                    "academic_id": "$lecturer.academicId"
+                }
+            }
+        ]
+        
+        supervisors_with_details = await self.collection.aggregate(pipeline).to_list(length=limit + 1)
+        
+        # Check if there's a next page
         next_cursor = None
-        if len(supervisors_with_details) == limit:
-            next_cursor = str(count)
+        if len(supervisors_with_details) > limit:
+            supervisors_with_details = supervisors_with_details[:limit]  # Remove the extra item
+            next_cursor = str(skip_count + limit)
 
         return {
             "items": supervisors_with_details,

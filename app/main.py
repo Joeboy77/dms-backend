@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.routes import (
     activity_logs,
+    auth,
     database,
     deliverables,
     fypcheckins,
@@ -11,6 +12,7 @@ from app.api.v1.routes import (
     health,
     lecturer_project_areas,
     lecturers,
+    logins,
     models,
     programs,
     project_areas,
@@ -37,6 +39,8 @@ app.add_middleware(
 )
 
 app.include_router(health.router)
+app.include_router(auth.router, prefix=settings.API_V1_STR)
+app.include_router(logins.router, prefix=settings.API_V1_STR)
 app.include_router(models.router, prefix=settings.API_V1_STR)
 app.include_router(academic_years.router, prefix=settings.API_V1_STR)
 app.include_router(database.router, prefix=settings.API_V1_STR)
