@@ -203,7 +203,7 @@ class StudentController:
                     "email": student.get("email", ""),
                     "phone": student.get("phone", ""),
                     "student_image": student.get("image", ""),
-                    "academicId": student.get("academicId", student.get("studentID", "")),
+                    "academicId": student.get("academicId", ""),
                     "program": (
                         {
                             "program_id": str(program["_id"]) if program else None,
@@ -230,7 +230,193 @@ class StudentController:
                         else None
                     ),
                 }
-                
+
                 students_data.append(student_info)
 
         return students_data
+
+    async def assign_students_to_supervisor(self, student_ids: list[str], academic_year_id: str, supervisor_id: str):
+        # Get the fypcheckin_id from academic year
+        checkin = await self.db["fypcheckins"].find_one({"academicYear": ObjectId(academic_year_id)})
+        if not checkin:
+            raise HTTPException(status_code=404, detail="FYP checkin not found for the academic year")
+
+        checkin_id = checkin["_id"]
+
+        created_assignments = []
+        assignment_errors = []
+
+        for student_id in student_ids:
+            try:
+                # Verify student exists
+                student = await self.collection.find_one({"_id": ObjectId(student_id)})
+                if not student:
+                    assignment_errors.append(f"Student {student_id} not found")
+                    continue
+
+                # Check if student already has an assignment for this checkin
+                existing_fyp = await self.db["fyps"].find_one({
+                    "student": ObjectId(student_id),
+                    "checkin": checkin_id
+                })
+                if existing_fyp:
+                    assignment_errors.append(f"Student {student_id} already assigned to a supervisor for this academic year")
+                    continue
+
+                # Create FYP assignment
+                fyp_data = {
+                    "student": ObjectId(student_id),
+                    "checkin": checkin_id,
+                    "supervisor": ObjectId(supervisor_id),
+                    "projectArea": None,  # To be assigned later if needed
+                    "createdAt": datetime.now(),
+                    "updatedAt": datetime.now()
+                }
+
+                result = await self.db["fyps"].insert_one(fyp_data)
+                created_fyp = await self.db["fyps"].find_one({"_id": result.inserted_id})
+
+                # Convert ObjectIds to strings for JSON serialization
+                serializable_fyp = {
+                    "fyp_id": str(created_fyp["_id"]),
+                    "student_id": str(created_fyp["student"]),
+                    "supervisor_id": str(created_fyp["supervisor"]),
+                    "checkin_id": str(created_fyp["checkin"]),
+                    "project_area_id": str(created_fyp["projectArea"]) if created_fyp["projectArea"] else None,
+                    "created_at": created_fyp["createdAt"],
+                    "updated_at": created_fyp["updatedAt"]
+                }
+                created_assignments.append(serializable_fyp)
+
+            except Exception as e:
+                assignment_errors.append(f"Error assigning student {student_id}: {str(e)}")
+
+        return {
+            "message": f"Assignment process completed",
+            "successful_assignments": len(created_assignments),
+            "failed_assignments": len(assignment_errors),
+            "created_assignments": created_assignments,
+            "errors": assignment_errors
+        }
+
+    async def get_all_students_with_details(self, limit: int = 10, cursor: str | None = None):
+        query = {"deleted": {"$ne": True}}
+        if cursor:
+            query["_id"] = {"$gt": ObjectId(cursor)}
+
+        students = await self.collection.find(query).limit(limit).to_list(limit)
+
+        detailed_students = []
+        for student in students:
+            # Get program details
+            program = None
+            if student.get("program"):
+                program = await self.db["programs"].find_one({"_id": student["program"]})
+
+            # Get student's FYP to find supervisor and project area
+            fyp = await self.db["fyps"].find_one({"student": student["_id"]})
+
+            supervisor = None
+            project_area = None
+
+            if fyp:
+                # Get supervisor details
+                if fyp.get("supervisor"):
+                    supervisor_lecturer = await self.db["lecturers"].find_one({"_id": fyp["supervisor"]})
+                    if supervisor_lecturer:
+                        # Create full name from surname and otherNames
+                        supervisor_name = f"{supervisor_lecturer.get('surname', '')} {supervisor_lecturer.get('otherNames', '')}".strip()
+                        supervisor = {
+                            "supervisor_id": str(supervisor_lecturer["_id"]),
+                            "name": supervisor_name,
+                            "email": supervisor_lecturer.get("email", ""),
+                            "phone": supervisor_lecturer.get("phone", ""),
+                            "position": supervisor_lecturer.get("position", ""),
+                            "title": supervisor_lecturer.get("title", ""),
+                            "bio": supervisor_lecturer.get("bio", ""),
+                            "academic_id": supervisor_lecturer.get("academicId", ""),
+                            "office_hours": supervisor_lecturer.get("officeHours", ""),
+                            "office_location": supervisor_lecturer.get("officeLocation", "")
+                        }
+
+                # Get project area details
+                if fyp.get("projectArea"):
+                    project_area_doc = await self.db["project_areas"].find_one({"_id": fyp["projectArea"]})
+                    if project_area_doc:
+                        project_area = {
+                            "project_area_id": str(project_area_doc["_id"]),
+                            "title": project_area_doc.get("title", ""),
+                            "description": project_area_doc.get("description", ""),
+                            "image": project_area_doc.get("image", "")
+                        }
+
+            # Format student name
+            student_name = f"{student.get('surname', '')} {student.get('otherNames', '')}".strip()
+
+            detailed_student = {
+                "student": {
+                    "student_id": str(student["_id"]),
+                    "student_name": student_name,
+                    "title": student.get("title", ""),
+                    "surname": student.get("surname", ""),
+                    "otherNames": student.get("otherNames", ""),
+                    "email": student.get("email", ""),
+                    "phone": student.get("phone", ""),
+                    "academic_id": student.get("academicId", ""),
+                    "image": student.get("image", ""),
+                    "type": student.get("type", "UNDERGRADUATE"),
+                    "deleted": student.get("deleted", False),
+                    "created_at": student.get("createdAt"),
+                    "updated_at": student.get("updatedAt")
+                },
+                "program": {
+                    "program_id": str(program["_id"]) if program else None,
+                    "title": program.get("title", "") if program else "N/A",
+                    "tag": program.get("tag", "") if program else "N/A",
+                    "description": program.get("description", "") if program else "N/A"
+                } if program else {
+                    "program_id": None,
+                    "title": "N/A",
+                    "tag": "N/A",
+                    "description": "N/A"
+                },
+                "supervisor": supervisor if supervisor else {
+                    "supervisor_id": None,
+                    "name": "N/A",
+                    "email": "N/A",
+                    "phone": "N/A",
+                    "position": "N/A",
+                    "title": "N/A",
+                    "bio": "N/A",
+                    "academic_id": "N/A",
+                    "office_hours": "N/A",
+                    "office_location": "N/A"
+                },
+                "project_area": project_area if project_area else {
+                    "project_area_id": None,
+                    "title": "N/A",
+                    "description": "N/A",
+                    "image": "N/A"
+                },
+                "fyp_details": {
+                    "fyp_id": str(fyp["_id"]) if fyp else None,
+                    "checkin_id": str(fyp["checkin"]) if fyp and fyp.get("checkin") else None,
+                    "created_at": fyp.get("createdAt") if fyp else None,
+                    "updated_at": fyp.get("updatedAt") if fyp else None
+                } if fyp else {
+                    "fyp_id": None,
+                    "checkin_id": None,
+                    "created_at": None,
+                    "updated_at": None
+                }
+            }
+            detailed_students.append(detailed_student)
+
+        next_cursor = None
+        if len(students) == limit:
+            next_cursor = str(students[-1]["_id"])
+
+        return {
+            "items": detailed_students,
+            "next_cursor": next_cursor
+        }

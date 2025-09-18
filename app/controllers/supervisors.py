@@ -10,20 +10,41 @@ class SupervisorController:
         self.collection = db["supervisors"]
 
     async def get_all_supervisors(self, limit: int = 10, cursor: str | None = None):
-        query = {}
-        if cursor:
-            query["_id"] = {"$gt": ObjectId(cursor)}
+        # Get all lecturers who have supervisor role in logins
+        supervisor_role_id = "684b0436cb438526c6aea950"
+        supervisor_logins = await self.db["logins"].find({"roles": ObjectId(supervisor_role_id)}).to_list(None)
 
-        supervisors = await self.collection.find(query).limit(limit).to_list(limit)
+        supervisors = []
+        count = 0
 
-        # Add project student count for each supervisor
-        for supervisor in supervisors:
-            count = await self.db["fyps"].count_documents({"supervisor": supervisor["_id"]})
-            supervisor["project_student_count"] = count
+        for login in supervisor_logins:
+            if cursor and count < int(cursor):
+                count += 1
+                continue
+
+            if len(supervisors) >= limit:
+                break
+
+            # Get lecturer details using academicId
+            lecturer = await self.db["lecturers"].find_one({"academicId": login["academicId"]})
+            if lecturer:
+                # Count students supervised by this lecturer
+                student_count = await self.db["fyps"].count_documents({"supervisor": lecturer["_id"]})
+
+                supervisor_data = {
+                    "_id": lecturer["_id"],
+                    "lecturer_id": lecturer["_id"],
+                    "max_students": lecturer.get("max_students"),
+                    "project_student_count": student_count,
+                    "created_at": lecturer.get("createdAt"),
+                    "updated_at": lecturer.get("updatedAt"),
+                    "academic_id": login["academicId"]
+                }
+                supervisors.append(supervisor_data)
 
         next_cursor = None
         if len(supervisors) == limit:
-            next_cursor = str(supervisors[-1]["_id"])
+            next_cursor = str(count + limit)
 
         return {
             "items": supervisors,
@@ -31,15 +52,35 @@ class SupervisorController:
         }
 
     async def get_supervisor_by_id(self, supervisor_id: str):
-        supervisor = await self.collection.find_one({"_id": ObjectId(supervisor_id)})
-        if not supervisor:
-            raise HTTPException(status_code=404, detail="Supervisor not found")
+        # Get lecturer details
+        lecturer = await self.db["lecturers"].find_one({"_id": ObjectId(supervisor_id)})
+        if not lecturer:
+            raise HTTPException(status_code=404, detail="Lecturer not found")
 
-        # Add project student count
-        count = await self.db["fyps"].count_documents({"supervisor": supervisor["_id"]})
-        supervisor["project_student_count"] = count
+        # Check if lecturer has supervisor role
+        supervisor_role_id = "684b0436cb438526c6aea950"
+        login = await self.db["logins"].find_one({
+            "academicId": lecturer.get("academicId"),
+            "roles": ObjectId(supervisor_role_id)
+        })
 
-        return supervisor
+        if not login:
+            raise HTTPException(status_code=404, detail="Supervisor role not found for this lecturer")
+
+        # Count students supervised by this lecturer
+        student_count = await self.db["fyps"].count_documents({"supervisor": lecturer["_id"]})
+
+        supervisor_data = {
+            "_id": lecturer["_id"],
+            "lecturer_id": lecturer["_id"],
+            "max_students": lecturer.get("max_students"),
+            "project_student_count": student_count,
+            "created_at": lecturer.get("createdAt"),
+            "updated_at": lecturer.get("updatedAt"),
+            "academic_id": lecturer.get("academicId")
+        }
+
+        return supervisor_data
 
     async def create_supervisor(self, supervisor_data: dict):
         # Convert lecturer_id to ObjectId if it's a string
@@ -122,40 +163,53 @@ class SupervisorController:
         }
 
     async def get_all_supervisors_with_lecturer_details(self, limit: int = 10, cursor: str | None = None):
-        query = {}
-        if cursor:
-            query["_id"] = {"$gt": ObjectId(cursor)}
-
-        supervisors = await self.collection.find(query).limit(limit).to_list(limit)
+        # Get all lecturers who have supervisor role in logins
+        supervisor_role_id = "684b0436cb438526c6aea950"
+        supervisor_logins = await self.db["logins"].find({"roles": ObjectId(supervisor_role_id)}).to_list(None)
 
         supervisors_with_details = []
-        for supervisor in supervisors:
-            # Get project student count
-            count = await self.db["fyps"].count_documents({"supervisor": supervisor["_id"]})
-            supervisor["project_student_count"] = count
+        count = 0
 
-            # Get lecturer details
-            lecturer = await self.db["lecturers"].find_one({"_id": supervisor["lecturer_id"]})
+        for login in supervisor_logins:
+            if cursor and count < int(cursor):
+                count += 1
+                continue
+
+            if len(supervisors_with_details) >= limit:
+                break
+
+            # Get lecturer details using academicId
+            lecturer = await self.db["lecturers"].find_one({"academicId": login["academicId"]})
             if lecturer:
+                # Count students supervised by this lecturer
+                student_count = await self.db["fyps"].count_documents({"supervisor": lecturer["_id"]})
+
+                # Create full name from surname and otherNames
+                lecturer_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
+
                 supervisor_with_details = {
-                    "_id": supervisor["_id"],
-                    "lecturer_id": supervisor["lecturer_id"],
-                    "max_students": supervisor.get("max_students"),
-                    "project_student_count": supervisor["project_student_count"],
-                    "createdAt": supervisor["createdAt"],
-                    "updatedAt": supervisor["updatedAt"],
-                    "lecturer_name": lecturer.get("name", ""),
+                    "_id": str(lecturer["_id"]),
+                    "lecturer_id": str(lecturer["_id"]),
+                    "max_students": lecturer.get("max_students"),
+                    "project_student_count": student_count,
+                    "createdAt": lecturer.get("createdAt"),
+                    "updatedAt": lecturer.get("updatedAt"),
+                    "lecturer_name": lecturer_name,
                     "lecturer_email": lecturer.get("email", ""),
                     "lecturer_phone": lecturer.get("phone"),
-                    "lecturer_department": lecturer.get("department"),
+                    "lecturer_position": lecturer.get("position"),
                     "lecturer_title": lecturer.get("title"),
-                    "lecturer_specialization": lecturer.get("specialization"),
+                    "lecturer_bio": lecturer.get("bio"),
+                    "lecturer_office_hours": lecturer.get("officeHours"),
+                    "lecturer_office_location": lecturer.get("officeLocation"),
+                    "academic_id": lecturer.get("academicId", "")
                 }
                 supervisors_with_details.append(supervisor_with_details)
+                count += 1
 
         next_cursor = None
         if len(supervisors_with_details) == limit:
-            next_cursor = str(supervisors_with_details[-1]["_id"])
+            next_cursor = str(count)
 
         return {
             "items": supervisors_with_details,
@@ -172,3 +226,109 @@ class SupervisorController:
             raise HTTPException(status_code=404, detail="Lecturer not found")
 
         return lecturer
+
+    async def get_supervisors_by_academic_year(self, academic_year_id: str):
+        # First get the fypcheckin for this academic year
+        checkin = await self.db["fypcheckins"].find_one({"academicYear": ObjectId(academic_year_id)})
+        if not checkin:
+            return []
+
+        # Get all FYPs for this checkin period to find active supervisors
+        fyps = await self.db["fyps"].find({"checkin": checkin["_id"]}).to_list(None)
+
+        # Extract unique supervisor IDs (lecturer IDs)
+        supervisor_ids = list(set(fyp["supervisor"] for fyp in fyps if fyp.get("supervisor")))
+
+        # Get supervisor details - check if they have supervisor role
+        supervisor_role_id = "684b0436cb438526c6aea950"
+        supervisors = []
+
+        for supervisor_id in supervisor_ids:
+            # Get lecturer details
+            lecturer = await self.db["lecturers"].find_one({"_id": supervisor_id})
+            if lecturer:
+                # Check if lecturer has supervisor role in logins
+                login = await self.db["logins"].find_one({
+                    "academicId": lecturer.get("academicId"),
+                    "roles": ObjectId(supervisor_role_id)
+                })
+
+                if login:
+                    # Count students for this academic year
+                    student_count = len([fyp for fyp in fyps if fyp.get("supervisor") == supervisor_id])
+
+                    supervisor_data = {
+                        "_id": lecturer["_id"],
+                        "lecturer_id": lecturer["_id"],
+                        "max_students": lecturer.get("max_students"),
+                        "project_student_count": student_count,
+                        "created_at": lecturer.get("createdAt"),
+                        "updated_at": lecturer.get("updatedAt"),
+                        "academic_id": lecturer.get("academicId")
+                    }
+                    supervisors.append(supervisor_data)
+
+        return supervisors
+
+    async def get_supervisors_by_academic_year_detailed(self, academic_year_id: str):
+        # Get basic supervisors for this academic year
+        supervisors = await self.get_supervisors_by_academic_year(academic_year_id)
+
+        # Get academic year details
+        academic_year = await self.db["academic_years"].find_one({"_id": ObjectId(academic_year_id)})
+
+        detailed_supervisors = []
+        for supervisor in supervisors:
+            # Get lecturer details (supervisor already contains lecturer info)
+            lecturer_id = supervisor["lecturer_id"]
+            lecturer = await self.db["lecturers"].find_one({"_id": lecturer_id})
+
+            # Get lecturer's project areas for this academic year
+            lpa = await self.db["lecturer_project_areas"].find_one({
+                "lecturer": lecturer_id,
+                "academicYear": ObjectId(academic_year_id)
+            })
+
+            project_areas = []
+            if lpa and lpa.get("projectAreas"):
+                for pa_id in lpa["projectAreas"]:
+                    pa = await self.db["project_areas"].find_one({"_id": pa_id})
+                    if pa:
+                        project_areas.append({
+                            "project_area_id": str(pa["_id"]),
+                            "title": pa.get("title", ""),
+                            "description": pa.get("description", ""),
+                            "image": pa.get("image", "")
+                        })
+
+            detailed_supervisor = {
+                "supervisor": {
+                    "supervisor_id": str(supervisor["_id"]),
+                    "academic_id": supervisor.get("academic_id", ""),
+                    "max_students": supervisor.get("max_students"),
+                    "project_student_count": supervisor.get("project_student_count", 0),
+                    "created_at": supervisor.get("created_at"),
+                    "updated_at": supervisor.get("updated_at")
+                },
+                "lecturer": {
+                    "lecturer_id": str(lecturer["_id"]) if lecturer else None,
+                    "name": lecturer.get("name", "") if lecturer else None,
+                    "email": lecturer.get("email", "") if lecturer else None,
+                    "phone": lecturer.get("phone", "") if lecturer else None,
+                    "department": lecturer.get("department", "") if lecturer else None,
+                    "title": lecturer.get("title", "") if lecturer else None,
+                    "specialization": lecturer.get("specialization", "") if lecturer else None,
+                    "academic_id": lecturer.get("academicId", "") if lecturer else None
+                } if lecturer else None,
+                "academic_year": {
+                    "academic_year_id": str(academic_year["_id"]) if academic_year else None,
+                    "title": academic_year.get("title", "") if academic_year else None,
+                    "status": academic_year.get("status", "") if academic_year else None,
+                    "terms": academic_year.get("terms", 0) if academic_year else None,
+                    "current_term": academic_year.get("currentTerm", 0) if academic_year else None
+                } if academic_year else None,
+                "project_areas": project_areas
+            }
+            detailed_supervisors.append(detailed_supervisor)
+
+        return detailed_supervisors

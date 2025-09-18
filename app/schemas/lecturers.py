@@ -1,7 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
 
-from app.schemas.base import Obj
+from app.schemas.base import Obj, PyObjectId
 
 
 class Page(BaseModel):
@@ -10,29 +10,50 @@ class Page(BaseModel):
 
 
 class LecturerCreate(BaseModel):
-    name: str
+    image: str | None = None
+    title: str | None = None
+    surname: str
+    otherNames: str | None = None
+    academicId: str
+    position: str | None = None
     email: str
     phone: str | None = None
-    department: str | None = None
-    title: str | None = None
-    specialization: str | None = None
+    bio: str | None = None
+    officeHours: str | None = None
+    officeLocation: str | None = None
+    deleted: bool = False
+    projectAreas: list[PyObjectId] = []
 
 
 class LecturerUpdate(BaseModel):
-    name: str | None = None
+    image: str | None = None
+    title: str | None = None
+    surname: str | None = None
+    otherNames: str | None = None
+    academicId: str | None = None
+    position: str | None = None
     email: str | None = None
     phone: str | None = None
-    department: str | None = None
-    title: str | None = None
-    specialization: str | None = None
+    bio: str | None = None
+    officeHours: str | None = None
+    officeLocation: str | None = None
+    deleted: bool | None = None
+    projectAreas: list[PyObjectId] | None = None
 
 
 class LecturerPublic(Obj):
-    name: str
+    image: str | None = None
+    title: str | None = None
+    surname: str
+    otherNames: str | None = None
+    academicId: str
+    position: str | None = None
     email: str
     phone: str | None = None
-    department: str | None = None
-    title: str | None = None
-    specialization: str | None = None
-    created_at: datetime = Field(validation_alias="createdAt")
-    updated_at: datetime = Field(validation_alias="updatedAt")
+    bio: str | None = None
+    officeHours: str | None = None
+    officeLocation: str | None = None
+    deleted: bool = False
+    projectAreas: list[PyObjectId] = []
+    createdAt: datetime = Field(validation_alias="createdAt")
+    updatedAt: datetime = Field(validation_alias="updatedAt")

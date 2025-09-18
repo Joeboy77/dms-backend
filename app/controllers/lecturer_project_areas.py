@@ -159,3 +159,54 @@ class LecturerProjectAreaController:
                 "updated_at": fyp.get("updatedAt") if fyp else None
             } if fyp else None
         }
+
+    async def get_detailed_by_academic_year(self, academic_year_id: str):
+        lpas = await self.collection.find({"academicYear": ObjectId(academic_year_id)}).to_list(None)
+
+        detailed_lpas = []
+        for lpa in lpas:
+            # Get lecturer details
+            lecturer = await self.db["lecturers"].find_one({"_id": lpa["lecturer"]})
+
+            # Get academic year details
+            academic_year = await self.db["academic_years"].find_one({"_id": lpa["academicYear"]})
+
+            # Get project areas details
+            project_areas = []
+            for pa_id in lpa["projectAreas"]:
+                pa = await self.db["project_areas"].find_one({"_id": pa_id})
+                if pa:
+                    project_areas.append({
+                        "project_area_id": str(pa["_id"]),
+                        "title": pa.get("title", ""),
+                        "description": pa.get("description", ""),
+                        "image": pa.get("image", ""),
+                        "created_at": pa.get("createdAt"),
+                        "updated_at": pa.get("updatedAt")
+                    })
+
+            detailed_lpa = {
+                "id": str(lpa["_id"]),
+                "lecturer": {
+                    "lecturer_id": str(lecturer["_id"]) if lecturer else None,
+                    "name": lecturer.get("name", "") if lecturer else None,
+                    "email": lecturer.get("email", "") if lecturer else None,
+                    "phone": lecturer.get("phone", "") if lecturer else None,
+                    "department": lecturer.get("department", "") if lecturer else None,
+                    "title": lecturer.get("title", "") if lecturer else None,
+                    "specialization": lecturer.get("specialization", "") if lecturer else None
+                } if lecturer else None,
+                "academic_year": {
+                    "academic_year_id": str(academic_year["_id"]) if academic_year else None,
+                    "title": academic_year.get("title", "") if academic_year else None,
+                    "status": academic_year.get("status", "") if academic_year else None,
+                    "terms": academic_year.get("terms", 0) if academic_year else None,
+                    "current_term": academic_year.get("currentTerm", 0) if academic_year else None
+                } if academic_year else None,
+                "project_areas": project_areas,
+                "created_at": lpa.get("createdAt"),
+                "updated_at": lpa.get("updatedAt")
+            }
+            detailed_lpas.append(detailed_lpa)
+
+        return detailed_lpas

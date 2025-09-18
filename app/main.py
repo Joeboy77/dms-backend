@@ -19,6 +19,9 @@ from app.api.v1.routes import (
     students,
     submissions,
     supervisors,
+    complaints,
+    academic_years,
+    communications,
 )
 from app.core.config import settings
 
@@ -35,6 +38,7 @@ app.add_middleware(
 
 app.include_router(health.router)
 app.include_router(models.router, prefix=settings.API_V1_STR)
+app.include_router(academic_years.router, prefix=settings.API_V1_STR)
 app.include_router(database.router, prefix=settings.API_V1_STR)
 app.include_router(students.router, prefix=settings.API_V1_STR)
 app.include_router(activity_logs.router, prefix=settings.API_V1_STR)
@@ -49,7 +53,9 @@ app.include_router(submissions.router, prefix=settings.API_V1_STR)
 app.include_router(groups.router, prefix=settings.API_V1_STR)
 app.include_router(lecturer_project_areas.router, prefix=settings.API_V1_STR)
 app.include_router(lecturers.router, prefix=settings.API_V1_STR)
+app.include_router(complaints.router, prefix=settings.API_V1_STR)
 app.include_router(supervisors.router, prefix=settings.API_V1_STR)
+app.include_router(communications.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/", include_in_schema=False)

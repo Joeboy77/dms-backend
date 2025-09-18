@@ -100,3 +100,23 @@ async def get_lecturer_by_supervisor_id(
 ):
     controller = SupervisorController(db)
     return await controller.get_lecturer_by_supervisor_id(id)
+
+
+@router.get("/supervisors/academic-year/{academic_year_id}", response_model=list[SupervisorPublic])
+async def get_supervisors_by_academic_year(
+    academic_year_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    # current_user: TokenData = Depends(get_current_token),
+):
+    controller = SupervisorController(db)
+    return await controller.get_supervisors_by_academic_year(academic_year_id)
+
+
+@router.get("/supervisors/academic-year/{academic_year_id}/detailed")
+async def get_supervisors_by_academic_year_detailed(
+    academic_year_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    # current_user: TokenData = Depends(get_current_token),
+):
+    controller = SupervisorController(db)
+    return await controller.get_supervisors_by_academic_year_detailed(academic_year_id)

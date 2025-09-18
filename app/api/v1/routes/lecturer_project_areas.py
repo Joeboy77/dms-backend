@@ -84,6 +84,16 @@ async def get_lecturer_project_areas_by_academic_year(
     return await controller.get_by_academic_year(academic_year_id)
 
 
+@router.get("/lecturer-project-areas/academic-year/{academic_year_id}/detailed")
+async def get_detailed_lecturer_project_areas_by_academic_year(
+    academic_year_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    # current_user: TokenData = Depends(get_current_token),
+):
+    controller = LecturerProjectAreaController(db)
+    return await controller.get_detailed_by_academic_year(academic_year_id)
+
+
 @router.get("/students/{student_id}/info", response_model=StudentInfoResponse)
 async def get_student_info_with_supervisor_and_project_area(
     student_id: str,

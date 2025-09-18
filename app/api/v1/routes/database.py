@@ -40,7 +40,7 @@ async def collection_info(
     count = await collection.count_documents({})
 
     # Get a few sample documents (limit to 5)
-    sample_docs = await collection.find({}).limit(5).to_list(length=5)
+    sample_docs = await collection.find({}).limit(20).to_list(length=20)
 
     # Convert ObjectIds to strings for JSON serialization
     sample_docs = convert_objectid_to_str(sample_docs)

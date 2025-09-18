@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token
 from app.core.database import get_db
-from app.schemas.students import StudentCreate, StudentPublic, StudentUpdate, Page
+from app.schemas.students import StudentCreate, StudentPublic, StudentUpdate, Page, StudentAssignmentRequest
 from app.schemas.token import TokenData
 from app.controllers.students import StudentController
 
@@ -20,11 +20,30 @@ async def get_all_students(
     return await controller.get_all_students(limit=limit, cursor=cursor)
 
 
+@router.get("/students/detailed")
+async def get_all_students_with_details(
+    limit: int = Query(10, alias="limit", ge=1, le=100),
+    cursor: str | None = None,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    controller = StudentController(db)
+    return await controller.get_all_students_with_details(limit=limit, cursor=cursor)
+
+
+@router.get("/students/count")
+async def get_total_student_count(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    # current_user: TokenData = Depends(get_current_token),
+):
+    controller = StudentController(db)
+    return await controller.get_total_student_count()
+
+
 @router.get("/students/{id}", response_model=StudentPublic)
 async def get_student(
     id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = StudentController(db)
     return await controller.get_student_by_id(id)
@@ -34,7 +53,7 @@ async def get_student(
 async def create_student(
     student: StudentCreate,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = StudentController(db)
     student_data = student.model_dump()
@@ -46,7 +65,7 @@ async def update_student(
     id: str,
     student: StudentUpdate,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = StudentController(db)
     update_data = student.model_dump()
@@ -57,7 +76,7 @@ async def update_student(
 async def delete_student(
     id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = StudentController(db)
     await controller.delete_student(id)
@@ -68,7 +87,7 @@ async def delete_student(
 async def get_students_by_major(
     major: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = StudentController(db)
     return await controller.get_students_by_major(major)
@@ -78,7 +97,7 @@ async def get_students_by_major(
 async def get_students_by_year(
     year: int,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = StudentController(db)
     return await controller.get_students_by_year(year)
@@ -103,10 +122,19 @@ async def get_students_by_supervisor(
     return await controller.get_students_by_supervisor(supervisor_id)
 
 
-@router.get("/students/count")
-async def get_total_student_count(
+@router.post("/students/assign-supervisor")
+async def assign_students_to_supervisor(
+    assignment_request: StudentAssignmentRequest,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = StudentController(db)
-    return await controller.get_total_student_count()
+    student_ids = [str(student_id) for student_id in assignment_request.student_ids]
+    academic_year_id = str(assignment_request.academic_year_id)
+    supervisor_id = str(assignment_request.supervisor_id)
+
+    return await controller.assign_students_to_supervisor(
+        student_ids=student_ids,
+        academic_year_id=academic_year_id,
+        supervisor_id=supervisor_id
+    )

@@ -10,6 +10,12 @@ class Page(BaseModel):
     next_cursor: str | None = None
 
 
+class StudentAssignmentRequest(BaseModel):
+    student_ids: list[PyObjectId]
+    academic_year_id: PyObjectId
+    supervisor_id: PyObjectId
+
+
 class StudentCreate(BaseModel):
     title: str | None = None
     surname: str
@@ -24,7 +30,7 @@ class StudentCreate(BaseModel):
     type: str = "UNDERGRADUATE" # DEFERRED
     admissionYear: PyObjectId | None = None
     currentAcademicYear: PyObjectId | None = None
-    classGroup: str | None = None
+    classGroup: PyObjectId | None = None
     image: str | None = None
 
 
@@ -42,7 +48,7 @@ class StudentUpdate(BaseModel):
     type: str | None = None
     admissionYear: PyObjectId | None = None
     currentAcademicYear: PyObjectId | None = None
-    classGroup: str | None = None
+    classGroup: PyObjectId | None = None
     image: str | None = None
 
 
@@ -62,5 +68,5 @@ class StudentPublic(Obj):
     type: str = "UNDERGRADUATE"
     admissionYear: PyObjectId | None = None
     currentAcademicYear: PyObjectId | None = None
-    classGroup: str | None = None
+    classGroup: PyObjectId | None = None
     image: str | None = None
