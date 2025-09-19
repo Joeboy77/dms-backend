@@ -5,6 +5,8 @@ from fastapi import HTTPException
 import random
 import string
 
+from app.api.v1.routes.database import convert_objectid_to_str
+
 
 class ComplaintController:
     def __init__(self, db: AsyncIOMotorDatabase):
@@ -29,7 +31,7 @@ class ComplaintController:
             next_cursor = str(complaints[-1]["_id"])
 
         return {
-            "items": complaints,
+            "items": convert_objectid_to_str(complaints),
             "next_cursor": next_cursor
         }
 
@@ -40,7 +42,7 @@ class ComplaintController:
         })
         if not complaint:
             raise HTTPException(status_code=404, detail="Complaint not found")
-        return complaint
+        return convert_objectid_to_str(complaint)
 
     async def create_complaint(self, complaint_data: dict):
         complaint_data["createdAt"] = datetime.now()
@@ -52,7 +54,7 @@ class ComplaintController:
 
         result = await self.collection.insert_one(complaint_data)
         created_complaint = await self.collection.find_one({"_id": result.inserted_id})
-        return created_complaint
+        return convert_objectid_to_str(created_complaint)
 
     async def update_complaint(self, complaint_id: str, update_data: dict):
         update_data = {k: v for k, v in update_data.items() if v is not None}
@@ -71,7 +73,7 @@ class ComplaintController:
             raise HTTPException(status_code=404, detail="Complaint not found")
 
         updated_complaint = await self.collection.find_one({"_id": ObjectId(complaint_id)})
-        return updated_complaint
+        return convert_objectid_to_str(updated_complaint)
 
     async def delete_complaint(self, complaint_id: str):
         result = await self.collection.update_one(
@@ -89,14 +91,14 @@ class ComplaintController:
             "status": status,
             "deleted": {"$ne": True}
         }).to_list(None)
-        return complaints
+        return convert_objectid_to_str(complaints)
 
     async def get_complaints_by_category(self, category_id: str):
         complaints = await self.collection.find({
             "category": ObjectId(category_id),
             "deleted": {"$ne": True}
         }).to_list(None)
-        return complaints
+        return convert_objectid_to_str(complaints)
 
     async def get_complaints_by_reference(self, reference: str):
         complaint = await self.collection.find_one({
@@ -105,7 +107,7 @@ class ComplaintController:
         })
         if not complaint:
             raise HTTPException(status_code=404, detail="Complaint not found with this reference")
-        return complaint
+        return convert_objectid_to_str(complaint)
 
     async def assign_complaint(self, complaint_id: str, assigned_to: list[str]):
         assigned_to_objects = [ObjectId(user_id) for user_id in assigned_to]
@@ -134,7 +136,7 @@ class ComplaintController:
             raise HTTPException(status_code=404, detail="Complaint not found")
 
         updated_complaint = await self.collection.find_one({"_id": ObjectId(complaint_id)})
-        return updated_complaint
+        return convert_objectid_to_str(updated_complaint)
 
     async def add_feedback(self, complaint_id: str, feedback_data: dict):
         feedback = {
@@ -157,7 +159,7 @@ class ComplaintController:
             raise HTTPException(status_code=404, detail="Complaint not found")
 
         updated_complaint = await self.collection.find_one({"_id": ObjectId(complaint_id)})
-        return updated_complaint
+        return convert_objectid_to_str(updated_complaint)
 
     async def update_status(self, complaint_id: str, status: str, notes: str | None = None):
         action = {
@@ -182,4 +184,4 @@ class ComplaintController:
             raise HTTPException(status_code=404, detail="Complaint not found")
 
         updated_complaint = await self.collection.find_one({"_id": ObjectId(complaint_id)})
-        return updated_complaint
+        return convert_objectid_to_str(updated_complaint)

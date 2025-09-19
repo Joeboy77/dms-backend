@@ -332,3 +332,90 @@ class SupervisorController:
             detailed_supervisors.append(detailed_supervisor)
 
         return detailed_supervisors
+
+    async def get_supervisor_by_student_id(self, student_id: str):
+        """Get supervisor details for a specific student by student academic ID"""
+        # First find the student by academicId
+        student = await self.db["students"].find_one({"academicId": student_id})
+        if not student:
+            raise HTTPException(status_code=404, detail=f"Student {student_id} not found")
+
+        # Find the most recent FYP assignment for this student (sorted by creation date)
+        fyp = await self.db["fyps"].find_one(
+            {"student": student["_id"]},
+            sort=[("createdAt", -1)]  # Get most recent assignment
+        )
+        if not fyp or not fyp.get("supervisor"):
+            raise HTTPException(status_code=404, detail=f"No supervisor assigned to student {student_id}")
+
+        # Get supervisor (lecturer) details
+        lecturer = await self.db["lecturers"].find_one({"_id": fyp["supervisor"]})
+        if not lecturer:
+            raise HTTPException(status_code=404, detail="Supervisor lecturer not found")
+
+        # Check if lecturer has supervisor role
+        supervisor_role_id = "684b0436cb438526c6aea950"
+        login = await self.db["logins"].find_one({
+            "academicId": lecturer.get("academicId"),
+            "roles": ObjectId(supervisor_role_id)
+        })
+
+        if not login:
+            raise HTTPException(status_code=404, detail="Lecturer does not have supervisor role")
+
+        # Count total students supervised by this lecturer
+        total_students = await self.db["fyps"].count_documents({"supervisor": lecturer["_id"]})
+
+        # Get FYP details
+        fyp_details = {
+            "fyp_id": str(fyp["_id"]),
+            "created_at": fyp.get("createdAt"),
+            "updated_at": fyp.get("updatedAt"),
+            "checkin_id": str(fyp["checkin"]) if fyp.get("checkin") else None,
+            "project_area_id": str(fyp["projectArea"]) if fyp.get("projectArea") else None
+        }
+
+        # Get project area details if available
+        project_area = None
+        if fyp.get("projectArea"):
+            pa = await self.db["project_areas"].find_one({"_id": fyp["projectArea"]})
+            if pa:
+                project_area = {
+                    "project_area_id": str(pa["_id"]),
+                    "title": pa.get("title", ""),
+                    "description": pa.get("description", ""),
+                    "image": pa.get("image", "")
+                }
+
+        # Format supervisor name
+        supervisor_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
+
+        return {
+            "student": {
+                "student_id": str(student["_id"]),
+                "academic_id": student.get("academicId", ""),
+                "student_name": f"{student.get('surname', '')} {student.get('otherNames', '')}".strip(),
+                "email": student.get("email", ""),
+                "phone": student.get("phone", ""),
+                "program": str(student.get("program")) if student.get("program") else None,
+                "level": str(student.get("level")) if student.get("level") else None
+            },
+            "supervisor": {
+                "supervisor_id": str(lecturer["_id"]),
+                "academic_id": lecturer.get("academicId", ""),
+                "name": supervisor_name,
+                "email": lecturer.get("email", ""),
+                "phone": lecturer.get("phone", ""),
+                "title": lecturer.get("title", ""),
+                "position": lecturer.get("position", ""),
+                "department": lecturer.get("department", ""),
+                "bio": lecturer.get("bio", ""),
+                "office_hours": lecturer.get("officeHours", ""),
+                "office_location": lecturer.get("officeLocation", ""),
+                "max_students": lecturer.get("max_students"),
+                "total_students_supervised": total_students,
+                "specialization": lecturer.get("specialization", "")
+            },
+            "assignment": fyp_details,
+            "project_area": project_area
+        }

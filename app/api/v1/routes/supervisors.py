@@ -9,7 +9,8 @@ from app.schemas.supervisors import (
     SupervisorUpdate,
     Page,
     SupervisorWithLecturer,
-    SupervisorWithLecturerDetails
+    SupervisorWithLecturerDetails,
+    StudentSupervisorResponse
 )
 from app.schemas.lecturers import LecturerPublic
 from app.schemas.token import TokenData
@@ -120,3 +121,14 @@ async def get_supervisors_by_academic_year_detailed(
 ):
     controller = SupervisorController(db)
     return await controller.get_supervisors_by_academic_year_detailed(academic_year_id)
+
+
+@router.get("/supervisors/student/{student_id}", response_model=StudentSupervisorResponse)
+async def get_supervisor_by_student_id(
+    student_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    # current_user: TokenData = Depends(get_current_token),
+):
+    """Get supervisor details for a specific student using their academic ID"""
+    controller = SupervisorController(db)
+    return await controller.get_supervisor_by_student_id(student_id)

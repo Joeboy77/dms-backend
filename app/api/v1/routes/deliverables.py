@@ -91,3 +91,14 @@ async def get_upcoming_deliverables(
 ):
     controller = DeliverableController(db)
     return await controller.get_upcoming_deliverables(limit)
+
+
+@router.get("/deliverables/student/{student_id}")
+async def get_deliverables_for_student(
+    student_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    # current_user: TokenData = Depends(get_current_token),
+):
+    """Get all deliverables for a specific student by their academic ID"""
+    controller = DeliverableController(db)
+    return await controller.get_deliverables_by_student_id(student_id)

@@ -129,7 +129,7 @@ async def assign_students_to_supervisor(
     # current_user: TokenData = Depends(get_current_token),
 ):
     controller = StudentController(db)
-    student_ids = [str(student_id) for student_id in assignment_request.student_ids]
+    student_ids = assignment_request.student_ids  # Already strings (academic IDs)
     academic_year_id = str(assignment_request.academic_year_id)
     supervisor_id = str(assignment_request.supervisor_id)
 

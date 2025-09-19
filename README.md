@@ -34,3 +34,6 @@
 }
 
 polar-waters-58235
+heroku container:push web --app polar-waters-58235
+heroku container:release web --app polar-waters-58235
+heroku logs --tail --app polar-waters-58235

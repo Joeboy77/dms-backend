@@ -248,15 +248,15 @@ class StudentController:
 
         for student_id in student_ids:
             try:
-                # Verify student exists
-                student = await self.collection.find_one({"_id": ObjectId(student_id)})
+                # Verify student exists - lookup by academicId instead of ObjectId
+                student = await self.collection.find_one({"academicId": student_id})
                 if not student:
                     assignment_errors.append(f"Student {student_id} not found")
                     continue
 
                 # Check if student already has an assignment for this checkin
                 existing_fyp = await self.db["fyps"].find_one({
-                    "student": ObjectId(student_id),
+                    "student": student["_id"],
                     "checkin": checkin_id
                 })
                 if existing_fyp:
@@ -265,7 +265,7 @@ class StudentController:
 
                 # Create FYP assignment
                 fyp_data = {
-                    "student": ObjectId(student_id),
+                    "student": student["_id"],
                     "checkin": checkin_id,
                     "supervisor": ObjectId(supervisor_id),
                     "projectArea": None,  # To be assigned later if needed

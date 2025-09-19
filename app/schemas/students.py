@@ -11,7 +11,7 @@ class Page(BaseModel):
 
 
 class StudentAssignmentRequest(BaseModel):
-    student_ids: list[PyObjectId]
+    student_ids: list[str]  # Accept academic IDs as strings
     academic_year_id: PyObjectId
     supervisor_id: PyObjectId
 
