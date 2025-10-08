@@ -30,18 +30,36 @@ class StudentController:
         return student
 
     async def create_student(self, student_data: dict):
-        student_data["created_at"] = datetime.now()
-        student_data["updated_at"] = None
+        student_data["createdAt"] = datetime.now()
+        student_data["updatedAt"] = None
 
-        # Check if student_id already exists
+        # Check if academicId already exists
         existing_student = await self.collection.find_one(
-            {"student_id": student_data["student_id"]}
+            {"academicId": student_data.get("academicId")}
         )
         if existing_student:
             raise HTTPException(status_code=400, detail="Student ID already exists")
 
         result = await self.collection.insert_one(student_data)
         created_student = await self.collection.find_one({"_id": result.inserted_id})
+        
+        try:
+            login_coll = self.db["logins"]
+            existing_login = await login_coll.find_one({"academicId": student_data.get("academicId")})
+            if not existing_login and student_data.get("pin"):
+                login_doc = {
+                    "academicId": student_data.get("academicId"),
+                    # store hashed pin in the logins collection
+                    "pin": student_data.get("pin"),
+                    "roles": [],
+                    "createdAt": datetime.now(),
+                    "updatedAt": datetime.now(),
+                }
+                await login_coll.insert_one(login_doc)
+        except Exception:
+            # intentionally ignore login creation errors here
+            pass
+
         return created_student
 
     async def update_student(self, student_id: str, update_data: dict):
@@ -51,7 +69,8 @@ class StudentController:
         if not update_data:
             raise HTTPException(status_code=400, detail="No valid fields to update")
 
-        update_data["updated_at"] = datetime.now()
+        # use camelCase updatedAt to match other documents/schemas
+        update_data["updatedAt"] = datetime.now()
 
         result = await self.collection.update_one(
             {"_id": ObjectId(student_id)}, {"$set": update_data}
