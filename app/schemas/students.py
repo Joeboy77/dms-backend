@@ -81,5 +81,5 @@ class StudentPublic(Obj):
     
     
 class StudentLogin(BaseModel):
-    academicId: str | None = Field(default=None, validation_alias="studentID")
+    academicId: str | None = Field(default=None, validation_alias="academicID")
     pin: str | None = None
