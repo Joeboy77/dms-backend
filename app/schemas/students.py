@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from bson import ObjectId
 
 from app.schemas.base import Obj, PyObjectId
@@ -25,6 +25,7 @@ class StudentCreate(BaseModel):
     program: PyObjectId | None = None
     level: PyObjectId | None = None
     academicId: str
+    pin: str
     academicYears: list[PyObjectId] | None = None
     deleted: bool = False
     type: str = "UNDERGRADUATE" # DEFERRED
@@ -32,6 +33,8 @@ class StudentCreate(BaseModel):
     currentAcademicYear: PyObjectId | None = None
     classGroup: PyObjectId | None = None
     image: str | None = None
+    
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class StudentUpdate(BaseModel):
@@ -50,6 +53,8 @@ class StudentUpdate(BaseModel):
     currentAcademicYear: PyObjectId | None = None
     classGroup: PyObjectId | None = None
     image: str | None = None
+    
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class StudentPublic(Obj):
@@ -63,6 +68,7 @@ class StudentPublic(Obj):
     createdAt: datetime = Field(validation_alias="createdAt")
     updatedAt: datetime | None = Field(default=None, validation_alias="updatedAt")
     academicId: str | None = Field(default=None, validation_alias="studentID")
+    pin: str | None = Field(default=None, validation_alias="pin")
     academicYears: list[PyObjectId] | None = None
     deleted: bool = False
     type: str = "UNDERGRADUATE"
@@ -70,3 +76,10 @@ class StudentPublic(Obj):
     currentAcademicYear: PyObjectId | None = None
     classGroup: PyObjectId | None = None
     image: str | None = None
+    
+    model_config = ConfigDict(populate_by_name=True)
+    
+    
+class StudentLogin(BaseModel):
+    academicId: str | None = Field(default=None, validation_alias="studentID")
+    pin: str | None = None

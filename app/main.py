@@ -2,6 +2,8 @@ from fastapi import FastAPI, responses
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.routes import (
+    auth,
+    logins,
     activity_logs,
     database,
     deliverables,
@@ -41,6 +43,8 @@ app.include_router(models.router, prefix=settings.API_V1_STR)
 app.include_router(academic_years.router, prefix=settings.API_V1_STR)
 app.include_router(database.router, prefix=settings.API_V1_STR)
 app.include_router(students.router, prefix=settings.API_V1_STR)
+app.include_router(auth.router, prefix=settings.API_V1_STR)
+app.include_router(logins.router, prefix=settings.API_V1_STR)
 app.include_router(activity_logs.router, prefix=settings.API_V1_STR)
 app.include_router(recent_activities.router, prefix=settings.API_V1_STR)
 app.include_router(reminders.router, prefix=settings.API_V1_STR)
