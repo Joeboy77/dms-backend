@@ -1,0 +1,275 @@
+INFO:     Will watch for changes in these directories: ['/Users/user/Desktop/projects/PBS/dms-backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [26277] using StatReload
+INFO:     Started server process [26287]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:49896 - "GET /openapi.json HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [26287]
+INFO:     Started server process [26609]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:50178 - "OPTIONS /api/v1/auth/student HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50180 - "POST /api/v1/auth/student HTTP/1.1" 404 Not Found
+INFO:     199.45.155.103:38522 - "GET / HTTP/1.1" 307 Temporary Redirect
+INFO:     199.45.155.103:52872 - "GET / HTTP/1.1" 307 Temporary Redirect
+INFO:     199.45.155.103:52882 - "PRI %2A HTTP/2.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     199.45.155.103:39374 - "GET /docs HTTP/1.1" 200 OK
+INFO:     199.45.155.103:59834 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     199.45.155.103:50382 - "PRI %2A HTTP/2.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     199.45.155.103:32886 - "GET /sitemap.xml HTTP/1.1" 404 Not Found
+INFO:     162.142.125.116:51576 - "GET / HTTP/1.1" 307 Temporary Redirect
+INFO:     162.142.125.116:42698 - "GET / HTTP/1.1" 307 Temporary Redirect
+INFO:     162.142.125.116:42708 - "PRI %2A HTTP/2.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.116:60814 - "GET /docs HTTP/1.1" 200 OK
+INFO:     162.142.125.116:60818 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     162.142.125.116:60838 - "PRI %2A HTTP/2.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     162.142.125.116:60866 - "GET /robots.txt HTTP/1.1" 404 Not Found
+INFO:     66.132.153.123:39248 - "GET / HTTP/1.1" 307 Temporary Redirect
+INFO:     66.132.153.123:39262 - "PRI %2A HTTP/2.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     66.132.153.123:52670 - "GET /docs HTTP/1.1" 200 OK
+INFO:     66.132.153.123:52688 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     66.132.153.123:52702 - "PRI %2A HTTP/2.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+INFO:     66.132.153.123:58672 - "GET /security.txt HTTP/1.1" 404 Not Found
+INFO:     105.29.165.239:38482 - "GET /docs HTTP/1.1" 200 OK
+INFO:     105.29.165.239:33358 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     105.29.165.239:38476 - "GET /.git/HEAD HTTP/1.1" 404 Not Found
+INFO:     105.29.165.239:38492 - "GET /.git/config HTTP/1.1" 404 Not Found
+INFO:     105.29.165.239:38508 - "GET /.well-known/security.txt HTTP/1.1" 404 Not Found
+INFO:     105.29.165.239:38512 - "GET /security.txt HTTP/1.1" 404 Not Found
+INFO:     105.29.165.239:43014 - "GET /api/v1/academic-years?limit=10 HTTP/1.1" 200 OK
+INFO:     105.29.165.239:35266 - "GET /api/v1/students?limit=10 HTTP/1.1" 200 OK
+INFO:     105.29.165.239:35356 - "GET /api/v1/students/count HTTP/1.1" 200 OK
+INFO:     105.29.165.239:41494 - "GET /api/v1/programs?limit=10 HTTP/1.1" 200 OK
+INFO:     105.29.165.239:45760 - "GET /api/v1/logins?limit=10 HTTP/1.1" 200 OK
+INFO:     105.29.165.239:48282 - "GET /api/v1/logins?limit=100 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 328, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 177, in serialize_response
+    raise ResponseValidationError(
+        errors=_normalize_errors(errors), body=response_content
+    )
+fastapi.exceptions.ResponseValidationError: 54 validation errors:
+  {'type': 'missing', 'loc': ('response', 'items', 18, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6653d9e308468be9d455e4a1'), 'academicId': '10000013', 'roles': [ObjectId('6661dd1384aa1ced2178bfb8')], 'createdAt': datetime.datetime(2024, 5, 27, 0, 54, 59, 135000), 'updatedAt': datetime.datetime(2024, 5, 27, 0, 54, 59, 135000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 19, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6658c658ffc9143d8f0912ae'), 'academicId': '10896569', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 5, 30, 18, 32, 56, 550000), 'updatedAt': datetime.datetime(2024, 5, 30, 18, 32, 56, 550000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 20, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6658c658ffc9143d8f0912b0'), 'academicId': '10891171', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 5, 30, 18, 32, 56, 767000), 'updatedAt': datetime.datetime(2024, 5, 30, 18, 32, 56, 767000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 21, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66592a9577574ca6d441330d'), 'academicId': '12304232', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 5, 31, 1, 40, 37, 735000), 'updatedAt': datetime.datetime(2024, 5, 31, 1, 40, 37, 735000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 22, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66592e6677574ca6d4413355'), 'academicId': '10896570', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 5, 31, 1, 56, 54, 122000), 'updatedAt': datetime.datetime(2024, 5, 31, 1, 56, 54, 122000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 24, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('665c84e456be0cd1028c629b'), 'academicId': '10923457', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 6, 2, 14, 42, 44, 978000), 'updatedAt': datetime.datetime(2024, 6, 2, 14, 42, 44, 978000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 25, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('665d9cfb56be0cd1028c74b4'), 'academicId': '10928456', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 6, 3, 10, 37, 47, 461000), 'updatedAt': datetime.datetime(2024, 6, 3, 10, 37, 47, 461000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 26, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('665d9cfb56be0cd1028c74b6'), 'academicId': '10922567', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 6, 3, 10, 37, 47, 680000), 'updatedAt': datetime.datetime(2024, 6, 3, 10, 37, 47, 680000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 27, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66601be2774e3ab10fc08a37'), 'academicId': '10923856', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 6, 5, 8, 3, 46, 685000), 'updatedAt': datetime.datetime(2024, 6, 5, 8, 3, 46, 685000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 29, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6672561ba4ad999d933f9b4c'), 'academicId': '10896568', 'roles': [ObjectId('666ad94b1331679b85a498a7')], 'createdAt': datetime.datetime(2024, 6, 19, 3, 52, 59, 626000), 'updatedAt': datetime.datetime(2024, 6, 19, 3, 52, 59, 626000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 30, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6672561ba4ad999d933f9b4d'), 'academicId': '10917244', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 6, 19, 3, 52, 59, 627000), 'updatedAt': datetime.datetime(2024, 6, 19, 3, 52, 59, 627000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 34, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6679b44c0c8d7847a5eaa2d3'), 'academicId': '10896502', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 6, 24, 18, 0, 44, 129000), 'updatedAt': datetime.datetime(2024, 6, 24, 18, 0, 44, 129000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 35, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6679b44c0c8d7847a5eaa2d2'), 'academicId': '10896501', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 6, 24, 18, 0, 44, 129000), 'updatedAt': datetime.datetime(2024, 6, 24, 18, 0, 44, 129000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 36, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6679d869b56bb702c91d5123'), 'academicId': '10891145', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 6, 24, 20, 34, 49, 475000), 'updatedAt': datetime.datetime(2024, 6, 24, 20, 34, 49, 475000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 37, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6679d869b56bb702c91d5124'), 'academicId': '92849141', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 6, 24, 20, 34, 49, 476000), 'updatedAt': datetime.datetime(2024, 6, 24, 20, 34, 49, 476000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 61, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240a4'), 'academicId': '10896503', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 582000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 582000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 62, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240a5'), 'academicId': '10896504', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 63, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240a6'), 'academicId': '10896505', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 64, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240a7'), 'academicId': '10896506', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 65, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240a8'), 'academicId': '10896507', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 66, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240aa'), 'academicId': '10896509', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 67, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240a9'), 'academicId': '10896508', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 68, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240ad'), 'academicId': '10896512', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 69, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240ae'), 'academicId': '10896513', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 70, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240b1'), 'academicId': '10896516', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 71, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240af'), 'academicId': '10896514', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 72, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240b0'), 'academicId': '10896515', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 73, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240b3'), 'academicId': '10896518', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 74, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240b2'), 'academicId': '10896517', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 75, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240ab'), 'academicId': '10896510', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 76, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240ac'), 'academicId': '10896511', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 77, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e405'), 'academicId': '10897503', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 560000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 560000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 78, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e406'), 'academicId': '10897504', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 79, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e408'), 'academicId': '10897506', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 80, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e407'), 'academicId': '10897505', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 81, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e409'), 'academicId': '10897507', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 82, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e40a'), 'academicId': '10897508', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 83, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e40d'), 'academicId': '10897511', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 84, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e40b'), 'academicId': '10897509', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 85, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e40c'), 'academicId': '10897510', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 86, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e410'), 'academicId': '10897514', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 87, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e40f'), 'academicId': '10897513', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 88, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e40e'), 'academicId': '10897512', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 89, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e411'), 'academicId': '10897515', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 90, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e414'), 'academicId': '10897518', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 91, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e413'), 'academicId': '10897517', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 92, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e415'), 'academicId': '10897519', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 93, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e412'), 'academicId': '10897516', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 94, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e418'), 'academicId': '10897522', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 562000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 562000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 95, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e419'), 'academicId': '10897523', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 562000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 562000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 96, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e417'), 'academicId': '10897521', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 562000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 562000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 97, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e416'), 'academicId': '10897520', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 98, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2932c455be89eb620e6c6'), 'academicId': '10896526', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 51, 8, 507000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 51, 8, 507000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 99, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2932c455be89eb620e6c7'), 'academicId': '10896527', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 51, 8, 507000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 51, 8, 507000)}}
+
+INFO:     105.29.165.239:50112 - "GET /api/v1/logins?limit=99 HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/uvicorn/protocols/http/h11_impl.py", line 403, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1054, in __call__
+    await super().__call__(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 78, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/starlette/routing.py", line 75, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 328, in app
+    content = await serialize_response(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "/Users/user/Desktop/projects/PBS/dms-backend/venv/lib/python3.13/site-packages/fastapi/routing.py", line 177, in serialize_response
+    raise ResponseValidationError(
+        errors=_normalize_errors(errors), body=response_content
+    )
+fastapi.exceptions.ResponseValidationError: 53 validation errors:
+  {'type': 'missing', 'loc': ('response', 'items', 18, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6653d9e308468be9d455e4a1'), 'academicId': '10000013', 'roles': [ObjectId('6661dd1384aa1ced2178bfb8')], 'createdAt': datetime.datetime(2024, 5, 27, 0, 54, 59, 135000), 'updatedAt': datetime.datetime(2024, 5, 27, 0, 54, 59, 135000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 19, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6658c658ffc9143d8f0912ae'), 'academicId': '10896569', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 5, 30, 18, 32, 56, 550000), 'updatedAt': datetime.datetime(2024, 5, 30, 18, 32, 56, 550000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 20, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6658c658ffc9143d8f0912b0'), 'academicId': '10891171', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 5, 30, 18, 32, 56, 767000), 'updatedAt': datetime.datetime(2024, 5, 30, 18, 32, 56, 767000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 21, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66592a9577574ca6d441330d'), 'academicId': '12304232', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 5, 31, 1, 40, 37, 735000), 'updatedAt': datetime.datetime(2024, 5, 31, 1, 40, 37, 735000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 22, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66592e6677574ca6d4413355'), 'academicId': '10896570', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 5, 31, 1, 56, 54, 122000), 'updatedAt': datetime.datetime(2024, 5, 31, 1, 56, 54, 122000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 24, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('665c84e456be0cd1028c629b'), 'academicId': '10923457', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 6, 2, 14, 42, 44, 978000), 'updatedAt': datetime.datetime(2024, 6, 2, 14, 42, 44, 978000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 25, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('665d9cfb56be0cd1028c74b4'), 'academicId': '10928456', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 6, 3, 10, 37, 47, 461000), 'updatedAt': datetime.datetime(2024, 6, 3, 10, 37, 47, 461000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 26, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('665d9cfb56be0cd1028c74b6'), 'academicId': '10922567', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 6, 3, 10, 37, 47, 680000), 'updatedAt': datetime.datetime(2024, 6, 3, 10, 37, 47, 680000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 27, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66601be2774e3ab10fc08a37'), 'academicId': '10923856', 'roles': ['65d2443921bf257b3472bf32'], 'createdAt': datetime.datetime(2024, 6, 5, 8, 3, 46, 685000), 'updatedAt': datetime.datetime(2024, 6, 5, 8, 3, 46, 685000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 29, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6672561ba4ad999d933f9b4c'), 'academicId': '10896568', 'roles': [ObjectId('666ad94b1331679b85a498a7')], 'createdAt': datetime.datetime(2024, 6, 19, 3, 52, 59, 626000), 'updatedAt': datetime.datetime(2024, 6, 19, 3, 52, 59, 626000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 30, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6672561ba4ad999d933f9b4d'), 'academicId': '10917244', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 6, 19, 3, 52, 59, 627000), 'updatedAt': datetime.datetime(2024, 6, 19, 3, 52, 59, 627000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 34, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6679b44c0c8d7847a5eaa2d3'), 'academicId': '10896502', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 6, 24, 18, 0, 44, 129000), 'updatedAt': datetime.datetime(2024, 6, 24, 18, 0, 44, 129000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 35, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6679b44c0c8d7847a5eaa2d2'), 'academicId': '10896501', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 6, 24, 18, 0, 44, 129000), 'updatedAt': datetime.datetime(2024, 6, 24, 18, 0, 44, 129000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 36, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6679d869b56bb702c91d5123'), 'academicId': '10891145', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 6, 24, 20, 34, 49, 475000), 'updatedAt': datetime.datetime(2024, 6, 24, 20, 34, 49, 475000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 37, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('6679d869b56bb702c91d5124'), 'academicId': '92849141', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 6, 24, 20, 34, 49, 476000), 'updatedAt': datetime.datetime(2024, 6, 24, 20, 34, 49, 476000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 61, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240a4'), 'academicId': '10896503', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 582000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 582000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 62, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240a5'), 'academicId': '10896504', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 63, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240a6'), 'academicId': '10896505', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 64, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240a7'), 'academicId': '10896506', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 65, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240a8'), 'academicId': '10896507', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 66, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240aa'), 'academicId': '10896509', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 67, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240a9'), 'academicId': '10896508', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 68, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240ad'), 'academicId': '10896512', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 69, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240ae'), 'academicId': '10896513', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 70, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240b1'), 'academicId': '10896516', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 71, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240af'), 'academicId': '10896514', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 72, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240b0'), 'academicId': '10896515', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 73, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240b3'), 'academicId': '10896518', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 74, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240b2'), 'academicId': '10896517', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 584000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 75, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240ab'), 'academicId': '10896510', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 76, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2881b3e7bc3360aa240ac'), 'academicId': '10896511', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 3, 55, 583000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 77, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e405'), 'academicId': '10897503', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 560000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 560000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 78, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e406'), 'academicId': '10897504', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 79, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e408'), 'academicId': '10897506', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 80, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e407'), 'academicId': '10897505', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 81, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e409'), 'academicId': '10897507', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 82, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e40a'), 'academicId': '10897508', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 83, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e40d'), 'academicId': '10897511', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 84, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e40b'), 'academicId': '10897509', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 85, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e40c'), 'academicId': '10897510', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 86, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e410'), 'academicId': '10897514', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 87, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e40f'), 'academicId': '10897513', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 88, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e40e'), 'academicId': '10897512', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 89, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e411'), 'academicId': '10897515', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 90, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e414'), 'academicId': '10897518', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 91, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e413'), 'academicId': '10897517', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 92, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e415'), 'academicId': '10897519', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 93, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e412'), 'academicId': '10897516', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 94, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e418'), 'academicId': '10897522', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 562000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 562000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 95, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e419'), 'academicId': '10897523', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 562000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 562000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 96, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e417'), 'academicId': '10897521', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 562000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 562000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 97, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2916d455be89eb620e416'), 'academicId': '10897520', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 43, 41, 561000)}}
+  {'type': 'missing', 'loc': ('response', 'items', 98, 'pin'), 'msg': 'Field required', 'input': {'_id': ObjectId('66d2932c455be89eb620e6c6'), 'academicId': '10896526', 'roles': [ObjectId('6663fd3a83eed3f937d1acf0')], 'createdAt': datetime.datetime(2024, 8, 31, 3, 51, 8, 507000), 'updatedAt': datetime.datetime(2024, 8, 31, 3, 51, 8, 507000)}}
+
+INFO:     105.29.165.239:53286 - "GET /api/v1/logins?limit=10 HTTP/1.1" 200 OK
+WARNING:  Invalid HTTP request received.

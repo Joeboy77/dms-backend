@@ -29,7 +29,12 @@ from app.core.config import settings
 
 app = FastAPI(title=settings.PROJECT_TITLE)
 
-origins = ["http://localhost:3000", "http://localhost:3001"]
+origins = [
+    "http://localhost:3000", 
+    "http://localhost:3001",
+    "https://your-frontend-domain.onrender.com",  # Add your frontend URL here
+    "https://your-app-name.onrender.com"  # Add your backend URL here
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
