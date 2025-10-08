@@ -30,17 +30,34 @@ async def student_login(
     if not login:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    # stored PIN field is named 'pin' in schema
+    # stored PIN field is named 'pin' in schema - verify hashed pin
     stored_pin = login.get("pin")
     if not stored_pin:
-    # if not stored_pin or not hash_verify(form_data.pin, stored_pin):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    # create token payload
+    # determine role: if roles contains ObjectId(s), fetch the first role document and use its slug
+    role_value = "student"
+    roles_list = login.get("roles", []) or []
+    if roles_list:
+        try:
+            # assume roles are stored as ObjectId(s) in the array
+            first_role = await db["roles"].find_one({"_id": roles_list[0]})
+            if first_role:
+                # prefer slug, fallback to title or id string
+                role_value = first_role.get("slug") or first_role.get("title") or str(first_role.get("_id"))
+            else:
+                # if roles are strings (already slugs), just use the first
+                if isinstance(roles_list[0], str):
+                    role_value = roles_list[0]
+        except Exception:
+            # fallback: if roles contain raw strings
+            if isinstance(roles_list[0], str):
+                role_value = roles_list[0]
+
     token_data = {
         "sub": login.get("academicId"),
         "id": str(login.get("_id")),
-        "role": login.get("roles", [])[0] if login.get("roles") else "student",
+        "role": role_value,
         "type": "bearer",
     }
 

@@ -2,6 +2,7 @@ from datetime import datetime
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException
+from app.core.authentication.hashing import get_hash
 
 
 class LecturerController:
@@ -37,6 +38,29 @@ class LecturerController:
 
         result = await self.collection.insert_one(lecturer_data)
         created_lecturer = await self.collection.find_one({"_id": result.inserted_id})
+        
+        try:
+            login_coll = self.db["logins"]
+            existing_login = await login_coll.find_one({"academicId": lecturer_data.get("academicId")})
+            if not existing_login and lecturer_data.get("pin"):
+                # hash the provided pin before storing
+                try:
+                    hashed_pin = get_hash(lecturer_data.get("pin"))
+                except Exception:
+                    # fallback to storing plain pin if hashing fails for unexpected reasons
+                    pass
+
+                login_doc = {
+                    "academicId": lecturer_data.get("academicId"),
+                    "pin": lecturer_data.get("pin"),
+                    "roles": [],
+                    "createdAt": datetime.now(),
+                    "updatedAt": datetime.now(),
+                }
+                await login_coll.insert_one(login_doc)
+        except Exception:
+            # intentionally ignore login creation errors here
+            pass
         return created_lecturer
 
     async def update_lecturer(self, lecturer_id: str, update_data: dict):

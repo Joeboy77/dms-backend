@@ -15,6 +15,7 @@ class LecturerCreate(BaseModel):
     surname: str
     otherNames: str | None = None
     academicId: str
+    pin: str
     position: str | None = None
     email: str
     phone: str | None = None
@@ -47,6 +48,7 @@ class LecturerPublic(Obj):
     surname: str
     otherNames: str | None = None
     academicId: str
+    pin: str
     position: str | None = None
     email: str
     phone: str | None = None
