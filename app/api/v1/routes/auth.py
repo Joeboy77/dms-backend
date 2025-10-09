@@ -32,8 +32,11 @@ async def student_login(
 
     # stored PIN field is named 'pin' in schema - verify hashed pin
     stored_pin = login.get("pin")
-    if not stored_pin:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    if form_data.pin != stored_pin:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials"
+        )
 
     # determine role: if roles contains ObjectId(s), fetch the first role document and use its slug
     role_value = "student"
