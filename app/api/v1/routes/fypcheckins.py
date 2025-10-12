@@ -24,7 +24,7 @@ async def get_all_checkins(
 async def get_checkin(
     id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypCheckinController(db)
     return await controller.get_checkin_by_id(id)
@@ -34,7 +34,7 @@ async def get_checkin(
 async def create_checkin(
     checkin: FypCheckinCreate,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypCheckinController(db)
     checkin_data = checkin.model_dump()
@@ -46,7 +46,7 @@ async def update_checkin(
     id: str,
     checkin: FypCheckinUpdate,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypCheckinController(db)
     update_data = checkin.model_dump()
@@ -57,7 +57,7 @@ async def update_checkin(
 async def delete_checkin(
     id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypCheckinController(db)
     await controller.delete_checkin(id)
@@ -68,7 +68,7 @@ async def delete_checkin(
 async def get_checkins_by_academic_year(
     academic_year_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypCheckinController(db)
     return await controller.get_checkins_by_academic_year(academic_year_id)
@@ -77,7 +77,7 @@ async def get_checkins_by_academic_year(
 @router.get("/fyp-checkins/active", response_model=list[FypCheckinPublic])
 async def get_active_checkins(
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypCheckinController(db)
     return await controller.get_active_checkins()

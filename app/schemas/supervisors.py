@@ -23,9 +23,9 @@ class SupervisorUpdate(BaseModel):
 class SupervisorPublic(Obj):
     lecturer_id: PyObjectId
     max_students: int | None = None
-    project_student_count: int = 0
-    created_at: datetime = Field(validation_alias="createdAt")
-    updated_at: datetime = Field(validation_alias="updatedAt")
+    project_student_count: int
+    createdAt: datetime = Field(validation_alias="createdAt", alias="createdAt")
+    updatedAt: datetime = Field(validation_alias="updatedAt", alias="updatedAt")
 
 
 class SupervisorWithLecturer(BaseModel):
@@ -36,7 +36,7 @@ class SupervisorWithLecturer(BaseModel):
 class SupervisorWithLecturerDetails(Obj):
     lecturer_id: PyObjectId
     max_students: int | None = None
-    project_student_count: int = 0
+    project_student_count: int
     created_at: datetime = Field(validation_alias="createdAt")
     updated_at: datetime = Field(validation_alias="updatedAt")
     lecturer_name: str
