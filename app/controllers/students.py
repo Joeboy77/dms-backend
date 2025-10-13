@@ -91,7 +91,7 @@ class StudentController:
         return {"message": "Student deleted successfully"}
 
     async def get_students_by_major(self, major: str):
-        students = await self.collection.find({"major": major}).to_list(None)
+        students = await self.collection.find({"program": major}).to_list(None)
         return students
 
     async def get_students_by_year(self, year: int):
@@ -256,7 +256,7 @@ class StudentController:
 
     async def assign_students_to_supervisor(self, student_ids: list[str], academic_year_id: str, supervisor_id: str):
         # Get the fypcheckin_id from academic year
-        checkin = await self.db["fypcheckins"].find_one({"academicYear": ObjectId(academic_year_id)})
+        checkin = await self.db["fypcheckins"].find_one({"academicYear": academic_year_id})
         if not checkin:
             raise HTTPException(status_code=404, detail="FYP checkin not found for the academic year")
 
