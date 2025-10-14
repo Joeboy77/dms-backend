@@ -4,6 +4,7 @@ from typing import List, Optional
 from enum import Enum
 
 from app.schemas.base import Obj, PyObjectId
+from app.schemas.project_areas import ProjectAreaPublic
 
 
 class InterestLevel(str, Enum):
@@ -50,7 +51,7 @@ class StudentInterestUpdate(BaseModel):
 class StudentInterestPublic(Obj):
     student: PyObjectId
     academicYear: PyObjectId
-    projectAreas: List[PyObjectId]
+    projectAreas: List[ProjectAreaPublic]
     preference_rank: int = 0
     interest_level: InterestLevel = InterestLevel.MEDIUM
     notes: str = ""
