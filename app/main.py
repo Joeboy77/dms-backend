@@ -25,6 +25,7 @@ from app.api.v1.routes import (
     complaints,
     academic_years,
     communications,
+    enhanced_supervisor_interests,
 )
 from app.core.config import settings
 
@@ -67,6 +68,7 @@ app.include_router(lecturers.router, prefix=settings.API_V1_STR)
 app.include_router(complaints.router, prefix=settings.API_V1_STR)
 app.include_router(supervisors.router, prefix=settings.API_V1_STR)
 app.include_router(communications.router, prefix=settings.API_V1_STR)
+app.include_router(enhanced_supervisor_interests.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/", include_in_schema=False)
