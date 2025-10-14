@@ -11,14 +11,28 @@ class StudentInterestController:
         self.collection = db["student_interests"]
         self.project_areas_collection = db["project_areas"]
 
+
     async def get_all_student_interests(self, limit: int = 10, cursor: str | None = None):
-        """Get all student interests with pagination"""
+        """Get all student interests with pagination and populated project areas."""
         query = {}
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}
 
-        interests = await self.collection.find(query).limit(limit).to_list(limit)
+        # Fetch interests
+        interests = await self.collection.find(query).limit(limit).to_list(None)
 
+        # For each interest, populate projectAreas
+        for interest in interests:
+            project_area_ids = interest.get("projectAreas", [])
+            if project_area_ids:
+                full_project_areas = await self.db["project_areas"].find({
+                    "_id": {"$in": project_area_ids}
+                }).to_list(None)
+                interest["projectAreas"] = full_project_areas  # replace ObjectIds with full docs
+            else:
+                interest["projectAreas"] = []
+
+        # Compute next cursor for pagination
         next_cursor = None
         if len(interests) == limit:
             next_cursor = str(interests[-1]["_id"])
@@ -27,6 +41,7 @@ class StudentInterestController:
             "items": interests,
             "next_cursor": next_cursor
         }
+
 
     async def get_student_interest_by_id(self, interest_id: str):
         """Get specific student interest by ID"""
