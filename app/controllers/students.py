@@ -102,86 +102,76 @@ class StudentController:
         count = await self.collection.count_documents({})
         return {"total_students": count}
 
+    from bson import ObjectId
+
     async def get_students_by_project_area(self, project_area_id: str):
-        # Get all FYPs that use this project area
-        fyps = (
-            await self.db["fyps"]
-            .find({"projectArea": ObjectId(project_area_id)})
-            .to_list(None)
-        )
+        print("🔍 Searching FYPs for projectArea:", project_area_id)
+
+        # Build query that matches both string and ObjectId
+        query = {"$or": [{"projectArea": project_area_id}]}
+        try:
+            query["$or"].append({"projectArea": ObjectId(project_area_id)})
+        except Exception as e:
+            print("⚠️ Invalid ObjectId format:", e)
+
+        fyps = await self.db["fyps"].find(query).to_list(None)
+        print(f"📦 Found {len(fyps)} FYP(s)")
+        if fyps:
+            print("🧾 Example FYP:", fyps[0])
 
         students_data = []
         for fyp in fyps:
-            # Get student details
-            student = await self.collection.find_one({"_id": fyp["student"]})
-            if student:
-                # Get program details
-                program = None
-                if student.get("program"):
-                    program = await self.db["programs"].find_one(
-                        {"_id": student["program"]}
-                    )
+            student_id = fyp.get("student")
+            if not student_id:
+                continue
 
-                # Get supervisor details
-                supervisor = None
-                if fyp.get("supervisor"):
-                    supervisor = await self.db["lecturers"].find_one(
-                        {"_id": fyp["supervisor"]}
-                    )
+            # ✅ Convert student_id safely
+            try:
+                student_obj_id = ObjectId(student_id)
+            except Exception:
+                student_obj_id = student_id
 
-                student_name = f"{student.get('surname', '')} {student.get('otherNames', '')}".strip()
+            student = await self.collection.find_one({"_id": student_obj_id})
+            if not student:
+                print(f"⚠️ No student found for FYP {fyp['_id']}")
+                continue
 
-                student_info = {
-                    "student_id": str(student["_id"]),
-                    "student_name": student_name,
-                    "surname": student.get("surname", ""),
-                    "otherNames": student.get("otherNames", ""),
-                    "email": student.get("email", ""),
-                    "phone": student.get("phone", ""),
-                    "student_image": student.get("image", ""),
-                    "academicId": student.get(
-                        "academicId", student.get("studentID", "")
-                    ),
-                    "program": (
-                        {
-                            "program_id": str(program["_id"]) if program else None,
-                            "title": program.get("title", "") if program else None,
-                            "tag": program.get("tag", "") if program else None,
-                            "description": (
-                                program.get("description", "") if program else None
-                            ),
-                        }
-                        if program
-                        else None
-                    ),
-                    "supervisor": (
-                        {
-                            "supervisor_id": (
-                                str(supervisor["_id"]) if supervisor else None
-                            ),
-                            "name": supervisor.get("name", "") if supervisor else None,
-                            "email": (
-                                supervisor.get("email", "") if supervisor else None
-                            ),
-                            "department": (
-                                supervisor.get("department", "") if supervisor else None
-                            ),
-                            "title": (
-                                supervisor.get("title", "") if supervisor else None
-                            ),
-                        }
-                        if supervisor
-                        else None
-                    ),
-                    "fyp_details": {
-                        "fyp_id": str(fyp["_id"]),
-                        "checkin": str(fyp["checkin"]) if fyp.get("checkin") else None,
-                        "created_at": fyp.get("createdAt"),
-                        "updated_at": fyp.get("updatedAt"),
-                    },
-                }
-                students_data.append(student_info)
+            # ✅ Convert program_id safely
+            program = None
+            if student.get("program"):
+                try:
+                    program_obj_id = ObjectId(student["program"])
+                except Exception:
+                    program_obj_id = student["program"]
+                program = await self.db["programs"].find_one({"_id": program_obj_id})
 
+            # ✅ Convert supervisor_id safely
+            supervisor_doc = None
+            if fyp.get("supervisor"):
+                try:
+                    supervisor_obj_id = ObjectId(fyp["supervisor"])
+                except Exception:
+                    supervisor_obj_id = fyp["supervisor"]
+                supervisor_doc = await self.db["supervisors"].find_one({"_id": supervisor_obj_id})
+
+            supervisor = None
+            if supervisor_doc:
+                try:
+                    lecturer_obj_id = ObjectId(supervisor_doc["lecturer_id"])
+                except Exception:
+                    lecturer_obj_id = supervisor_doc["lecturer_id"]
+                supervisor = await self.db["lecturers"].find_one({"_id": lecturer_obj_id})
+
+            # 🧱 Assemble final student info
+            students_data.append({
+                "student_id": str(student["_id"]),
+                "student_name": f"{student.get('surname', '')} {student.get('otherNames', '')}".strip(),
+                "program": program.get("title", "") if program else None,
+                "supervisor": f"{supervisor.get('surname', '')} {supervisor.get('otherNames', '')}".strip() if supervisor else None,
+                "fyp_id": str(fyp["_id"]),
+            })
+
+        print("✅ Returning", len(students_data), "students")
         return students_data
 
 

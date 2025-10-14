@@ -36,7 +36,7 @@ class LecturerProjectAreaController:
         if "lecturer" in lpa_data and isinstance(lpa_data["lecturer"], str):
             lpa_data["lecturer"] = ObjectId(lpa_data["lecturer"])
         if "academicYear" in lpa_data and isinstance(lpa_data["academicYear"], str):
-            lpa_data["academicYear"] = ObjectId(lpa_data["academicYear"])
+            lpa_data["academicYear"] = lpa_data["academicYear"]
         if "projectAreas" in lpa_data:
             lpa_data["projectAreas"] = [
                 ObjectId(pa_id) if isinstance(pa_id, str) else pa_id

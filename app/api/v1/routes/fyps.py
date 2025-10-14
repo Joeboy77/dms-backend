@@ -46,7 +46,7 @@ async def update_fyp(
     id: str,
     fyp: FypUpdate,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypController(db)
     update_data = fyp.model_dump()

@@ -24,7 +24,7 @@ async def get_all_programs(
 async def get_program(
     id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = ProgramController(db)
     return await controller.get_program_by_id(id)
@@ -34,7 +34,7 @@ async def get_program(
 async def create_program(
     program: ProgramCreate,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = ProgramController(db)
     program_data = program.model_dump()
