@@ -28,7 +28,7 @@ class EnhancedSupervisorInterestController:
         # Get lecturer's project areas for specific academic year
         query = {"lecturer": supervisor["lecturer_id"]}
         if academic_year_id:
-            query["academicYear"] = ObjectId(academic_year_id)
+            query["academicYear"] = academic_year_id
 
         lpa_records = await self.lecturer_project_areas_collection.find(query).to_list(None)
 

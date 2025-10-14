@@ -113,10 +113,17 @@ class StudentInterestController:
 
     async def get_student_interests_by_student(self, student_id: str):
         """Get all interests for a specific student"""
+        # 1️⃣ Validate the ID format first
         if not ObjectId.is_valid(student_id):
             raise HTTPException(status_code=400, detail="Invalid student ID format")
 
+        # 2️⃣ Query using ObjectId
         interests = await self.collection.find({"student": ObjectId(student_id)}).to_list(None)
+
+        # 3️⃣ Debug print (optional)
+        print("DEBUG Query Result:", interests)
+
+        # 4️⃣ Return the data
         return interests
 
     async def get_student_interests_by_academic_year(self, academic_year_id: str):
