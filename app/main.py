@@ -19,6 +19,7 @@ from app.api.v1.routes import (
     recent_activities,
     reminders,
     students,
+    student_interests,
     submissions,
     supervisors,
     complaints,
@@ -48,6 +49,7 @@ app.include_router(models.router, prefix=settings.API_V1_STR)
 app.include_router(academic_years.router, prefix=settings.API_V1_STR)
 app.include_router(database.router, prefix=settings.API_V1_STR)
 app.include_router(students.router, prefix=settings.API_V1_STR)
+app.include_router(student_interests.router, prefix=settings.API_V1_STR)
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 # app.include_router(logins.router, prefix=settings.API_V1_STR)
 app.include_router(activity_logs.router, prefix=settings.API_V1_STR)

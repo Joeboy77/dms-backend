@@ -180,8 +180,8 @@ class SupervisorController:
             lecturer = await self.db["lecturers"].find_one({"_id": doc.get("lecturer_id")})
             if not lecturer:
                 continue
-
-            student_count = await self.db["fyps"].count_documents({"supervisor": lecturer["_id"]})
+            
+            student_count = await self.db["fyps"].count_documents({"supervisor": doc.get("_id")})
             lecturer_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
 
             supervisor_with_details = {
@@ -192,7 +192,7 @@ class SupervisorController:
                 "createdAt": doc.get("createdAt", lecturer.get("createdAt")),
                 "updatedAt": doc.get("updatedAt", lecturer.get("updatedAt")),
                 "lecturer_name": lecturer_name,
-                    "lecturer_email": lecturer.get("email", ""),
+                "lecturer_email": lecturer.get("email", ""),
                 "lecturer_phone": lecturer.get("phone"),
                 "lecturer_position": lecturer.get("position"),
                 "lecturer_title": lecturer.get("title"),
