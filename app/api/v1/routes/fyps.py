@@ -24,7 +24,7 @@ async def get_all_fyps(
 async def get_fyp(
     id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypController(db)
     return await controller.get_fyp_by_id(id)
@@ -34,7 +34,7 @@ async def get_fyp(
 async def create_fyp(
     fyp: FypCreate,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypController(db)
     fyp_data = fyp.model_dump()
@@ -57,7 +57,7 @@ async def update_fyp(
 async def delete_fyp(
     id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypController(db)
     await controller.delete_fyp(id)
@@ -68,7 +68,7 @@ async def delete_fyp(
 async def get_fyp_by_student(
     student_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypController(db)
     return await controller.get_fyps_by_student(student_id)
@@ -78,7 +78,7 @@ async def get_fyp_by_student(
 async def get_fyps_by_supervisor(
     supervisor_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypController(db)
     return await controller.get_fyps_by_supervisor(supervisor_id)
@@ -88,7 +88,7 @@ async def get_fyps_by_supervisor(
 async def get_fyps_by_project_area(
     project_area_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypController(db)
     return await controller.get_fyps_by_project_area(project_area_id)
@@ -98,7 +98,7 @@ async def get_fyps_by_project_area(
 async def get_fyps_by_checkin(
     checkin_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(get_current_token),
+    # current_user: TokenData = Depends(get_current_token),
 ):
     controller = FypController(db)
     return await controller.get_fyps_by_checkin(checkin_id)

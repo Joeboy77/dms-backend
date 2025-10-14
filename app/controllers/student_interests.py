@@ -9,6 +9,7 @@ class StudentInterestController:
     def __init__(self, db: AsyncIOMotorDatabase):
         self.db = db
         self.collection = db["student_interests"]
+        self.project_areas_collection = db["project_areas"]
 
     async def get_all_student_interests(self, limit: int = 10, cursor: str | None = None):
         """Get all student interests with pagination"""
@@ -52,7 +53,7 @@ class StudentInterestController:
             for pa_id in interest_data["projectAreas"]:
                 pa_obj_id = ObjectId(pa_id) if isinstance(pa_id, str) else pa_id
                 # Validate project area exists
-                if not await self.db["project_areas"].find_one({"_id": pa_obj_id}):
+                if not await self.project_areas_collection.find_one({"_id": pa_obj_id}):
                     raise HTTPException(status_code=400, detail=f"Project area {pa_id} not found")
                 project_areas.append(pa_obj_id)
             interest_data["projectAreas"] = project_areas
@@ -83,7 +84,7 @@ class StudentInterestController:
             for pa_id in update_data["projectAreas"]:
                 pa_obj_id = ObjectId(pa_id) if isinstance(pa_id, str) else pa_id
                 # Check if project area exists
-                project_area = await self.db["project_areas"].find_one({"_id": pa_obj_id})
+                project_area = await self.project_areas_collection.find_one({"_id": pa_obj_id})
                 if not project_area:
                     raise HTTPException(status_code=400, detail=f"Project area {pa_id} not found")
                 validated_project_areas.append(pa_obj_id)
@@ -113,17 +114,24 @@ class StudentInterestController:
 
     async def get_student_interests_by_student(self, student_id: str):
         """Get all interests for a specific student"""
-        # 1️⃣ Validate the ID format first
         if not ObjectId.is_valid(student_id):
             raise HTTPException(status_code=400, detail="Invalid student ID format")
 
-        # 2️⃣ Query using ObjectId
+        # Step 1: Find all interests for this student
         interests = await self.collection.find({"student": ObjectId(student_id)}).to_list(None)
 
-        # 3️⃣ Debug print (optional)
-        print("DEBUG Query Result:", interests)
+        # Step 2: Populate each project's details
+        for interest in interests:
+            populated_areas = []
+            for pa_id in interest.get("projectAreas", []):
+                # ensure pa_id is an ObjectId
+                if isinstance(pa_id, str) and ObjectId.is_valid(pa_id):
+                    pa_id = ObjectId(pa_id)
+                project_area = await self.project_areas_collection.find_one({"_id": pa_id})
+                if project_area:
+                    populated_areas.append(project_area)
+            interest["projectAreas"] = populated_areas
 
-        # 4️⃣ Return the data
         return interests
 
     async def get_student_interests_by_academic_year(self, academic_year_id: str):

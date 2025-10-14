@@ -101,7 +101,7 @@ class EnhancedSupervisorInterestController:
         # Check if lecturer already has this project area for this academic year
         existing_lpa = await self.lecturer_project_areas_collection.find_one({
             "lecturer": supervisor["lecturer_id"],
-            "academicYear": ObjectId(academic_year_id),
+            "academicYear": academic_year_id,
             "projectAreas": ObjectId(project_area_id)
         })
 
@@ -111,7 +111,7 @@ class EnhancedSupervisorInterestController:
         # Add to lecturer_project_areas collection
         lpa_record = await self.lecturer_project_areas_collection.find_one({
             "lecturer": supervisor["lecturer_id"],
-            "academicYear": ObjectId(academic_year_id)
+            "academicYear": academic_year_id
         })
 
         if lpa_record:
@@ -127,7 +127,7 @@ class EnhancedSupervisorInterestController:
             # Create new record
             lpa_data = {
                 "lecturer": supervisor["lecturer_id"],
-                "academicYear": ObjectId(academic_year_id),
+                "academicYear": academic_year_id,
                 "projectAreas": [ObjectId(project_area_id)],
                 "createdAt": datetime.now(),
                 "updatedAt": datetime.now()
@@ -156,7 +156,7 @@ class EnhancedSupervisorInterestController:
         await self.lecturer_project_areas_collection.update_one(
             {
                 "lecturer": supervisor["lecturer_id"],
-                "academicYear": ObjectId(academic_year_id)
+                "academicYear": academic_year_id
             },
             {
                 "$pull": {"projectAreas": ObjectId(project_area_id)},
@@ -180,7 +180,7 @@ class EnhancedSupervisorInterestController:
         # Get supervisor's project areas
         query = {"lecturer": (await self.supervisors_collection.find_one({"_id": ObjectId(supervisor_id)}))["lecturer_id"]}
         if academic_year_id:
-            query["academicYear"] = ObjectId(academic_year_id)
+            query["academicYear"] = academic_year_id
 
         lpa_records = await self.lecturer_project_areas_collection.find(query).to_list(None)
 
@@ -202,7 +202,7 @@ class EnhancedSupervisorInterestController:
 
             for interest in student_interests:
                 # Check if this is for the right academic year
-                if academic_year_id and interest["academicYear"] != ObjectId(academic_year_id):
+                if academic_year_id and interest["academicYear"] != academic_year_id:
                     continue
 
                 # Get student details
@@ -288,7 +288,7 @@ class EnhancedSupervisorInterestController:
         """Get analytics about supervisor interests and matching patterns"""
         query = {}
         if academic_year_id:
-            query["academicYear"] = ObjectId(academic_year_id)
+            query["academicYear"] = academic_year_id
 
         # Get all lecturer project area records
         lpa_records = await self.lecturer_project_areas_collection.find(query).to_list(None)
@@ -377,7 +377,7 @@ class EnhancedSupervisorInterestController:
         # Get all students with interests
         query = {}
         if academic_year_id:
-            query["academicYear"] = ObjectId(academic_year_id)
+            query["academicYear"] = academic_year_id
 
         student_interests = await self.db["student_interests"].find(query).to_list(None)
         
