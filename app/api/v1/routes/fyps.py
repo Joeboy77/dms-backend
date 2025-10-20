@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token
 from app.core.database import get_db
-from app.schemas.fyps import FypCreate, FypPublic, FypUpdate, Page
+from app.schemas.fyps import FypCreate, FypPublic, FypPublicWithProjectArea, FypUpdate, Page
 from app.schemas.token import TokenData
 from app.controllers.fyps import FypController
 
@@ -64,7 +64,7 @@ async def delete_fyp(
     return responses.Response(status_code=204)
 
 
-@router.get("/fyps/student/{student_id}", response_model=FypPublic | None)
+@router.get("/fyps/student/{student_id}", response_model=FypPublicWithProjectArea | None)
 async def get_fyp_by_student(
     student_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),

@@ -129,11 +129,14 @@ class StudentInterestController:
 
     async def get_student_interests_by_student(self, student_id: str):
         """Get all interests for a specific student"""
-        if not ObjectId.is_valid(student_id):
-            raise HTTPException(status_code=400, detail="Invalid student ID format")
+        # if not ObjectId.is_valid(student_id):
+        #     raise HTTPException(status_code=400, detail="Invalid student ID format")
 
         # Step 1: Find all interests for this student
-        interests = await self.collection.find({"student": ObjectId(student_id)}).to_list(None)
+        student = await self.db["students"].find_one({"academicId": student_id})
+        if not student:
+            raise HTTPException(status_code=404, detail=f"Student {student_id} not found")
+        interests = await self.collection.find({"student": student["_id"]}).to_list(None)
 
         # Step 2: Populate each project's details
         for interest in interests:
@@ -215,7 +218,7 @@ class StudentInterestController:
         # Get student interests
         query = {"student": ObjectId(student_id)}
         if academic_year_id:
-            query["academicYear"] = ObjectId(academic_year_id)
+            query["academicYear"] = academic_year_id
 
         student_interests = await self.collection.find(query).to_list(None)
         if not student_interests:
@@ -321,7 +324,7 @@ class StudentInterestController:
         """Get statistics about student interests"""
         query = {}
         if academic_year_id:
-            query["academicYear"] = ObjectId(academic_year_id)
+            query["academicYear"] = academic_year_id
 
         interests = await self.collection.find(query).to_list(None)
 

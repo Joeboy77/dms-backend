@@ -35,8 +35,8 @@ class SubmissionController:
         # Convert IDs to ObjectId if they're strings
         if "deliverable_id" in submission_data and isinstance(submission_data["deliverable_id"], str):
             submission_data["deliverable_id"] = ObjectId(submission_data["deliverable_id"])
-        if "student_id" in submission_data and isinstance(submission_data["student_id"], str):
-            submission_data["student_id"] = ObjectId(submission_data["student_id"])
+        if "group_id" in submission_data and isinstance(submission_data["group_id"], str):
+            submission_data["group_id"] = ObjectId(submission_data["group_id"])
 
         submission_data["createdAt"] = datetime.now()
         submission_data["updatedAt"] = datetime.now()
@@ -44,10 +44,10 @@ class SubmissionController:
         # Check if student already submitted for this deliverable
         existing_submission = await self.collection.find_one({
             "deliverable_id": submission_data["deliverable_id"],
-            "student_id": submission_data["student_id"]
+            "group_id": submission_data["group_id"]
         })
         if existing_submission:
-            raise HTTPException(status_code=400, detail="Student has already submitted for this deliverable")
+            raise HTTPException(status_code=400, detail="Group has already submitted for this deliverable")
 
         result = await self.collection.insert_one(submission_data)
         created_submission = await self.collection.find_one({"_id": result.inserted_id})

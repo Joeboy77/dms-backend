@@ -50,6 +50,7 @@ class StudentInterestUpdate(BaseModel):
 
 class StudentInterestPublic(Obj):
     student: PyObjectId
+    # academicId: str
     academicYear: PyObjectId
     projectAreas: List[ProjectAreaPublic]
     preference_rank: int = 0

@@ -1,7 +1,9 @@
 from datetime import datetime
 from pydantic import BaseModel, Field
+from typing import List
 
 from app.schemas.base import Obj, PyObjectId
+from app.schemas.project_areas import ProjectAreaPublic
 
 
 class Page(BaseModel):
@@ -30,3 +32,20 @@ class FypPublic(Obj):
     supervisor: PyObjectId | None = None
     createdAt: datetime = Field(validation_alias="createdAt")
     updatedAt: datetime = Field(validation_alias="updatedAt")
+    
+    
+class FypPublicWithProjectArea(Obj):
+    student: PyObjectId
+    projectArea: ProjectAreaPublic
+    checkin: PyObjectId
+    supervisor: PyObjectId | None = None
+    createdAt: datetime = Field(validation_alias="createdAt")
+    updatedAt: datetime = Field(validation_alias="updatedAt")
+
+
+class FypWithDetails(BaseModel):
+    fyp: FypPublic
+    student_details: dict
+    project_area_details: List[ProjectAreaPublic]
+    checkin_details: dict
+    supervisor_details: dict

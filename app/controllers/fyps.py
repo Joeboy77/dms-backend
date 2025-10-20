@@ -8,6 +8,7 @@ class FypController:
     def __init__(self, db: AsyncIOMotorDatabase):
         self.db = db
         self.collection = db["fyps"]
+        self.project_areas_collection = db["project_areas"]
 
     async def get_all_fyps(self, limit: int = 10, cursor: str | None = None):
         query = {}
@@ -72,7 +73,37 @@ class FypController:
         return {"message": "FYP deleted successfully"}
 
     async def get_fyps_by_student(self, student_id: str):
-        fyp = await self.collection.find_one({"student": ObjectId(student_id)})
+        # Accept either academicId (e.g., CS2025001) or a Mongo ObjectId string
+        student = await self.db["students"].find_one({"academicId": student_id})
+        if not student and ObjectId.is_valid(student_id):
+            student = await self.db["students"].find_one({"_id": ObjectId(student_id)})
+        if not student:
+            raise HTTPException(status_code=404, detail=f"Student {student_id} not found")
+
+        # There should be at most one FYP per student; pick most recent if multiple
+        # Handle both storage forms: ObjectId and stringified ObjectId
+        student_oid = student["_id"]
+        fyp = await self.collection.find_one(
+            {
+                "$or": [
+                    {"student": student_oid},
+                    {"student": str(student_oid)}
+                ]
+            },
+            sort=[("createdAt", -1)]
+        )
+        if not fyp:
+            raise HTTPException(status_code=404, detail=f"No FYP found for student {student_id}")
+
+        # Populate single projectArea document in place of ObjectId
+        project_area_id = fyp.get("projectArea")
+        if project_area_id:
+            if isinstance(project_area_id, str) and ObjectId.is_valid(project_area_id):
+                project_area_id = ObjectId(project_area_id)
+            project_area_doc = await self.project_areas_collection.find_one({"_id": project_area_id})
+            if project_area_doc:
+                fyp["projectArea"] = project_area_doc
+
         return fyp
 
     async def get_fyps_by_supervisor(self, supervisor_id: str):
