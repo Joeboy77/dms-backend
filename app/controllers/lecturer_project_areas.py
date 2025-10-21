@@ -98,12 +98,16 @@ class LecturerProjectAreaController:
 
     async def get_student_info_with_supervisor_and_project_area(self, student_id: str):
         # Get student details
-        student = await self.db["students"].find_one({"_id": ObjectId(student_id)})
+        # student = await self.db["students"].find_one({"_id": ObjectId(student_id)})
+        student = await self.db["students"].find_one({"academicId": student_id})
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
 
         # Get student's FYP details to find supervisor and project area
-        fyp = await self.db["fyps"].find_one({"student": ObjectId(student_id)})
+        # fyp = await self.db["fyps"].find_one({"student": ObjectId(student_id)})
+        fyp = await self.db["fyps"].find_one({"student": str(student["_id"])})
+        print(fyp)
+        print(student)
 
         supervisor = None
         project_area = None
@@ -111,11 +115,12 @@ class LecturerProjectAreaController:
         if fyp:
             # Get supervisor details
             if fyp.get("supervisor"):
-                supervisor = await self.db["lecturers"].find_one({"_id": fyp["supervisor"]})
+                supervisor = await self.db["supervisors"].find_one({"_id": ObjectId(fyp["supervisor"])})
+                lecturer = await self.db["lecturers"].find_one({"_id": supervisor["lecturer_id"]})
 
             # Get project area details
             if fyp.get("projectArea"):
-                project_area = await self.db["project_areas"].find_one({"_id": fyp["projectArea"]})
+                project_area = await self.db["project_areas"].find_one({"_id": ObjectId(fyp["projectArea"])})
 
         # Get program details
         program = None
@@ -142,9 +147,15 @@ class LecturerProjectAreaController:
             },
             "supervisor": {
                 "supervisor_id": str(supervisor["_id"]) if supervisor else None,
-                "supervisor_name": supervisor.get("name", "") if supervisor else None,
-                "supervisor_email": supervisor.get("email", "") if supervisor else None,
-                "supervisor_department": supervisor.get("department", "") if supervisor else None
+                "supervisor_name": f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip() if lecturer else None,
+                "supervisor_email": lecturer.get("email", "") if lecturer else None,
+                "supervisor_phone": lecturer.get("phone", "") if lecturer else None,
+                "supervisor_title": lecturer.get("title", "") if lecturer else None,
+                "supervisor_department": lecturer.get("department", "") if lecturer else None,
+                "supervisor_specialization": lecturer.get("specialization", "") if lecturer else None,
+                "supervisor_academic_id": lecturer.get("academicId", "") if lecturer else None,
+                "supervisor_office_hours": lecturer.get("officeHours", "") if lecturer else None,
+                "supervisor_office_location": lecturer.get("officeLocation", "") if lecturer else None,
             } if supervisor else None,
             "project_area": {
                 "project_area_id": str(project_area["_id"]) if project_area else None,
