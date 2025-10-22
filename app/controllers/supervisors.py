@@ -386,33 +386,35 @@ class SupervisorController:
         Get supervisor details for a specific student by their academic ID
         """
 
-        # 1️⃣ Find the student by academicId
+        #  Find the student by academicId
         student = await self.db["students"].find_one({"academicId": student_id})
         if not student:
             raise HTTPException(status_code=404, detail=f"Student {student_id} not found")
 
-        # 2️⃣ Find the most recent FYP assignment for this student
+        #  Find the most recent FYP assignment for this student
         fyp = await self.db["fyps"].find_one(
-            {"student": student["_id"]},
+            {"student": str(student["_id"])},
             sort=[("createdAt", -1)]
         )
+        
+        print(fyp)
         if not fyp or not fyp.get("supervisor"):
             raise HTTPException(status_code=404, detail=f"No supervisor assigned to student {student_id}")
 
-        # 3️⃣ Get the supervisor document
-        supervisor_doc = await self.db["supervisors"].find_one({"_id": fyp["supervisor"]})
+        #  Get the supervisor document
+        supervisor_doc = await self.db["supervisors"].find_one({"_id": ObjectId(fyp["supervisor"])})
         if not supervisor_doc:
             raise HTTPException(status_code=404, detail="Supervisor record not found")
 
-        # 4️⃣ Ensure the linked lecturer exists
+        #  Ensure the linked lecturer exists
         lecturer = await self.db["lecturers"].find_one({"_id": supervisor_doc["lecturer_id"]})
         if not lecturer:
             raise HTTPException(status_code=404, detail="Lecturer not found for this supervisor")
 
-        # 5️⃣ Count total students supervised by this lecturer
+        #  Count total students supervised by this lecturer
         total_students = await self.db["fyps"].count_documents({"supervisor": supervisor_doc["_id"]})
 
-        # 6️⃣ Get FYP details
+        #  Get FYP details
         fyp_details = {
             "fyp_id": str(fyp["_id"]),
             "createdAt": fyp.get("createdAt"),
@@ -421,10 +423,10 @@ class SupervisorController:
             "project_area_id": str(fyp["projectArea"]) if fyp.get("projectArea") else None
         }
 
-        # 7️⃣ Get project area details (if available)
+        #  Get project area details (if available)
         project_area = None
         if fyp.get("projectArea"):
-            pa = await self.db["project_areas"].find_one({"_id": fyp["projectArea"]})
+            pa = await self.db["project_areas"].find_one({"_id": ObjectId(fyp["projectArea"])})
             if pa:
                 project_area = {
                     "project_area_id": str(pa["_id"]),
@@ -433,10 +435,10 @@ class SupervisorController:
                     "image": pa.get("image", "")
                 }
 
-        # 8️⃣ Format supervisor name
+        #  Format supervisor name
         supervisor_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
 
-        # 9️⃣ Return structured response
+        #  Return structured response
         return {
             "student": {
                 "student_id": str(student["_id"]),
