@@ -113,6 +113,29 @@ class LecturerController:
         if "projectAreas" in created_lecturer:
             created_lecturer["projectAreas"] = await self._resolve_project_area_titles(created_lecturer)
             
+        # try:
+        #     login_coll = self.db["logins"]
+        #     existing_login = await login_coll.find_one({"academicId": lecturer_data.get("academicId")})
+        #     if not existing_login and lecturer_data.get("pin"):
+        #         # hash the provided pin before storing
+        #         try:
+        #             hashed_pin = get_hash(lecturer_data.get("pin"))
+        #         except Exception:
+        #             # fallback to storing plain pin if hashing fails for unexpected reasons
+        #             pass
+
+        #         login_doc = {
+        #             "academicId": lecturer_data.get("academicId"),
+        #             "pin": lecturer_data.get("pin"),
+        #             "roles": ["lecturer"],
+        #             "createdAt": datetime.now(),
+        #             "updatedAt": datetime.now(),
+        #         }
+        #         await login_coll.insert_one(login_doc)
+        # except Exception:
+        #     # intentionally ignore login creation errors here
+        #     pass
+            
         return created_lecturer
 
     async def update_lecturer(self, lecturer_id: str, update_data: dict):

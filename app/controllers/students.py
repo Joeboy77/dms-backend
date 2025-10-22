@@ -43,22 +43,22 @@ class StudentController:
         result = await self.collection.insert_one(student_data)
         created_student = await self.collection.find_one({"_id": result.inserted_id})
         
-        try:
-            login_coll = self.db["logins"]
-            existing_login = await login_coll.find_one({"academicId": student_data.get("academicId")})
-            if not existing_login and student_data.get("pin"):
-                login_doc = {
-                    "academicId": student_data.get("academicId"),
-                    # store hashed pin in the logins collection
-                    "pin": student_data.get("pin"),
-                    "roles": [],
-                    "createdAt": datetime.now(),
-                    "updatedAt": datetime.now(),
-                }
-                await login_coll.insert_one(login_doc)
-        except Exception:
-            # intentionally ignore login creation errors here
-            pass
+        # try:
+        #     login_coll = self.db["logins"]
+        #     existing_login = await login_coll.find_one({"academicId": student_data.get("academicId")})
+        #     if not existing_login and student_data.get("pin"):
+        #         login_doc = {
+        #             "academicId": student_data.get("academicId"),
+        #             # store hashed pin in the logins collection
+        #             "pin": student_data.get("pin"),
+        #             "roles": ["student"],
+        #             "createdAt": datetime.now(),
+        #             "updatedAt": datetime.now(),
+        #         }
+        #         await login_coll.insert_one(login_doc)
+        # except Exception:
+        #     # intentionally ignore login creation errors here
+        #     pass
 
         return created_student
 
