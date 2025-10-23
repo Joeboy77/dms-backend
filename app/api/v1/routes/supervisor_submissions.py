@@ -27,7 +27,9 @@ async def get_submission_dashboard(
     Shows total submissions, submitted, unsubmitted, and pending counts.
     """
     try:
-        supervisor_academic_id = getattr(current_user, 'sub', 'LEC2025003')
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
         
         supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
         if not supervisor:
@@ -143,7 +145,9 @@ async def get_deliverable_students(
     Shows the table view with student details and submission status.
     """
     try:
-        supervisor_academic_id = getattr(current_user, 'sub', 'LEC2025003')
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
         
         supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
         if not supervisor:
@@ -332,7 +336,9 @@ async def get_student_submission_details(
     Shows individual student profile with submission details.
     """
     try:
-        supervisor_academic_id = getattr(current_user, 'sub', 'LEC2025003')
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
         
         supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
         if not supervisor:
@@ -443,7 +449,9 @@ async def get_group_submission_details(
     Shows group profile with all members and submission details.
     """
     try:
-        supervisor_academic_id = getattr(current_user, 'sub', 'LEC2025003')
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
         
         supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
         if not supervisor:
@@ -590,7 +598,9 @@ async def update_submission_status(
     Update the status of a submission (approve, request changes, etc.).
     """
     try:
-        supervisor_academic_id = getattr(current_user, 'sub', 'LEC2025003')
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
         
         supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
         if not supervisor:

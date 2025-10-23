@@ -43,7 +43,9 @@ async def get_supervisor_students(
         from bson import ObjectId
         from datetime import datetime
         
-        supervisor_academic_id = getattr(current_user, 'sub', 'LEC2025003')
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
         
         supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
         if not supervisor:
@@ -52,11 +54,11 @@ async def get_supervisor_students(
         supervisor_id = supervisor["_id"]
         
         students_under_supervisor = await db["fyps"].find(
-            {"supervisor_id": supervisor_id},
-            {"student_id": 1}
+            {"supervisor": supervisor_id},
+            {"student": 1}
         ).to_list(length=None)
         
-        student_ids = [fyp["student_id"] for fyp in students_under_supervisor]
+        student_ids = [fyp["student"] for fyp in students_under_supervisor]
         
         supervisor_groups = await db["groups"].find(
             {"supervisor_id": supervisor_id, "status": "active"}
@@ -109,7 +111,7 @@ async def get_supervisor_students(
                         "status": "active"
                     })
                     
-                    if view == "individual" and is_in_group:
+                    if is_in_group:
                         continue
                     
                     program = await db["programs"].find_one({"_id": student.get("program")})
@@ -189,7 +191,9 @@ async def create_group_from_students(
         from bson import ObjectId
         from datetime import datetime
         
-        supervisor_academic_id = getattr(current_user, 'sub', 'LEC2025003')
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
         
         supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
         if not supervisor:
@@ -199,8 +203,8 @@ async def create_group_from_students(
         
         for student_id in group_request.student_ids:
             fyp = await db["fyps"].find_one({
-                "student_id": ObjectId(student_id),
-                "supervisor_id": supervisor_id
+                "student": ObjectId(student_id),
+                "supervisor": supervisor_id
             })
             if not fyp:
                 raise HTTPException(
@@ -211,7 +215,7 @@ async def create_group_from_students(
         group_data = {
             "name": group_request.group_name,
             "project_topic": group_request.project_topic or "",
-            "supervisor_id": supervisor_id,
+            "supervisor": supervisor_id,
             "student_ids": [ObjectId(sid) for sid in group_request.student_ids],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
@@ -250,7 +254,9 @@ async def create_direct_group(
         from bson import ObjectId
         from datetime import datetime
         
-        supervisor_academic_id = getattr(current_user, 'sub', 'LEC2025003')
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
         
         supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
         if not supervisor:
@@ -261,7 +267,7 @@ async def create_direct_group(
         group_data = {
             "name": group_request.group_name,
             "project_topic": group_request.project_topic or "",
-            "supervisor_id": supervisor_id,
+            "supervisor": supervisor_id,
             "student_ids": [],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),

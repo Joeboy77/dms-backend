@@ -35,9 +35,10 @@ class RoleBasedAccessControl:
 
     def __call__(
         self, current_token: TokenData = Depends(get_current_token)
-    ) -> None:
+    ) -> TokenData:
         if current_token.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="User role not permitted to perform this action",
             )
+        return current_token

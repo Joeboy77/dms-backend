@@ -22,7 +22,9 @@ async def get_supervisor_reminders(
         from datetime import datetime, timedelta
         
 
-        supervisor_academic_id = getattr(current_user, 'sub', 'LEC2025003')
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
         
         supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
         if not supervisor:

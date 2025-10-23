@@ -83,8 +83,8 @@ async def create_coordinator_log(
         log_entry = {
             "description": log_data.get("description", ""),
             "action": log_data.get("action", ""),
-            "user_name": getattr(current_user, 'sub', 'LEC2025003'),  # Coordinator's academic ID
-            "user_id": getattr(current_user, 'id', '68f909ae2e6f85f29dbfc30b'),
+            "user_name": current_user.email,  # Coordinator's academic ID
+            "user_id": current_user.id,
             "type": log_data.get("type", "coordinator_action"),
             "timestamp": datetime.utcnow(),
             "createdAt": datetime.utcnow(),
