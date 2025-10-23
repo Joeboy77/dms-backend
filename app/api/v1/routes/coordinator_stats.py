@@ -44,3 +44,44 @@ async def get_student_statistics(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching student statistics: {str(e)}")
+
+
+@router.get("/coordinator/recent-activities")
+async def get_recent_activities(
+    limit: int = 12,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_coordinator)
+):
+    """
+    Get recent activities for project coordinator dashboard.
+    Returns paginated list of recent activities with pagination info.
+    """
+    try:
+        total_activities = await db["activity_logs"].count_documents({})
+        
+        activities = await db["activity_logs"].find(
+            {},
+            {"_id": 1, "description": 1, "timestamp": 1, "type": 1}
+        ).sort("timestamp", -1).limit(limit).to_list(length=limit)
+        
+        formatted_activities = []
+        for activity in activities:
+            formatted_activities.append({
+                "id": str(activity["_id"]),
+                "description": activity.get("description", ""),
+                "timestamp": activity.get("timestamp"),
+                "type": activity.get("type", "assignment")
+            })
+        
+        return {
+            "activities": formatted_activities,
+            "pagination": {
+                "current_page": 1,
+                "per_page": limit,
+                "total": total_activities,
+                "showing": f"1-{len(formatted_activities)} of {total_activities}"
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching recent activities: {str(e)}")
