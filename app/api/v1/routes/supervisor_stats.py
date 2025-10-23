@@ -22,7 +22,9 @@ async def get_supervisor_recent_activities(
         from datetime import datetime, timedelta
         
         # Get supervisor's academic ID from token
-        supervisor_academic_id = getattr(current_user, 'sub', 'LEC2025003')
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
         
         # Find supervisor in lecturers collection
         supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
@@ -139,7 +141,9 @@ async def get_supervisor_student_statistics(
     """
     try:
         # Get supervisor's academic ID from token
-        supervisor_academic_id = getattr(current_user, 'sub', 'LEC2025003')
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
         
         # Find supervisor in lecturers collection
         supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})

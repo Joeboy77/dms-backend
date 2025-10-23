@@ -56,7 +56,7 @@ async def login_user(
     if user_type == "lecturer":
         academic_id = login.get("academicId")
         if academic_id == "LEC2025003":
-            role_value = "projects_coordinator"
+            role_value = "projects_coordinator"  # LEC2025003 is both coordinator and supervisor
         else:
             role_value = "projects_supervisor"
     else:
@@ -92,7 +92,15 @@ async def login_user(
         {"$set": {"lastLogin": datetime.utcnow(), "token": access_token}},
     )
 
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "user": {
+            "academicId": login.get("academicId"),
+            "role": role_value,
+            "user_type": user_type
+        }
+    }
 
 
 @router.post("/auth/logout")
