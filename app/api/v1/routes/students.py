@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.core.authentication.auth_middleware import get_current_token
+from app.core.authentication.auth_middleware import get_current_token, RoleBasedAccessControl
 from app.core.database import get_db
 from app.schemas.students import StudentCreate, StudentPublic, StudentUpdate, Page, StudentAssignmentRequest
 from app.schemas.token import TokenData
 from app.controllers.students import StudentController
 
 router = APIRouter(tags=["Students"])
-
+require_coordinator = RoleBasedAccessControl(["projects_coordinator"])
 
 @router.get("/students", response_model=Page)
 async def get_all_students(
@@ -126,7 +126,7 @@ async def get_students_by_supervisor(
 async def assign_students_to_supervisor(
     assignment_request: StudentAssignmentRequest,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    # current_user: TokenData = Depends(get_current_token),
+    current_user: TokenData = Depends(require_coordinator)
 ):
     controller = StudentController(db)
     student_ids = assignment_request.student_ids  # Already strings (academic IDs)
