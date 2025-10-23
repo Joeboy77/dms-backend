@@ -74,22 +74,24 @@ class ProgramController:
 
     async def get_student_dashboard(self, student_id: str):
         # Get student details
-        student = await self.db["students"].find_one({"_id": ObjectId(student_id)})
+        # student = await self.db["students"].find_one({"_id": ObjectId(student_id)})
+        student = await self.db["students"].find_one({"academicId": student_id})
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
 
         # Get program details
         program = None
         if student.get("program"):
-            program = await self.collection.find_one({"_id": student["program"]})
+            program = await self.collection.find_one({"title": student["program"]})
 
         # Get FYP details to determine progress
-        fyp = await self.db["fyps"].find_one({"student": ObjectId(student_id)})
+        # fyp = await self.db["fyps"].find_one({"student": ObjectId(student_id)})
+        fyp = await self.db["fyps"].find_one({"student": str(student["_id"])})
 
         progress_status = "not_started"
         if fyp:
             # Get checkin details
-            checkin = await self.db["fypcheckins"].find_one({"_id": fyp["checkin"]})
+            checkin = await self.db["fypcheckins"].find_one({"_id": ObjectId(fyp["checkin"])})
             if checkin and checkin.get("checkin") and checkin.get("active"):
                 progress_status = "in_progress"
 

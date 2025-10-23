@@ -14,12 +14,14 @@ class ProgramCreate(BaseModel):
     tag: str
     description: str
     createdBy: PyObjectId
+    code: str
 
 
 class ProgramUpdate(BaseModel):
     title: str | None = None
     tag: str | None = None
     description: str | None = None
+    code: str | None = None
 
 
 class ProgramPublic(Obj):
@@ -29,6 +31,7 @@ class ProgramPublic(Obj):
     createdBy: PyObjectId
     createdAt: datetime = Field(validation_alias="createdAt")
     updatedAt: datetime = Field(validation_alias="updatedAt")
+    code: str
 
 
 class StudentDashboardResponse(BaseModel):
