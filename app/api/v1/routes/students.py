@@ -15,6 +15,7 @@ async def get_all_students(
     limit: int = Query(10, alias="limit", ge=1, le=100),
     cursor: str | None = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_coordinator)
 ):
     controller = StudentController(db)
     return await controller.get_all_students(limit=limit, cursor=cursor)
@@ -25,6 +26,7 @@ async def get_all_students_with_details(
     limit: int = Query(10, alias="limit", ge=1, le=100),
     cursor: str | None = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_coordinator)
 ):
     controller = StudentController(db)
     return await controller.get_all_students_with_details(limit=limit, cursor=cursor)

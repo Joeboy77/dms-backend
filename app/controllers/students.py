@@ -320,10 +320,10 @@ class StudentController:
             # Get program details
             program = None
             if student.get("program"):
-                program = await self.db["programs"].find_one({"_id": student["program"]})
+                program = await self.db["programs"].find_one({"title": student["program"]})
 
             # Get student's FYP to find supervisor and project area
-            fyp = await self.db["fyps"].find_one({"student": student["_id"]})
+            fyp = await self.db["fyps"].find_one({"student": str(student["_id"])})
 
             supervisor = None
             project_area = None
@@ -331,26 +331,27 @@ class StudentController:
             if fyp:
                 # Get supervisor details
                 if fyp.get("supervisor"):
-                    supervisor_lecturer = await self.db["lecturers"].find_one({"_id": fyp["supervisor"]})
+                    supervisor_lecturer = await self.db["supervisors"].find_one({"_id": ObjectId(fyp["supervisor"])})
+                    lecturer = await self.db["lecturers"].find_one({"_id": supervisor_lecturer["lecturer_id"]})
                     if supervisor_lecturer:
                         # Create full name from surname and otherNames
-                        supervisor_name = f"{supervisor_lecturer.get('surname', '')} {supervisor_lecturer.get('otherNames', '')}".strip()
+                        supervisor_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
                         supervisor = {
-                            "supervisor_id": str(supervisor_lecturer["_id"]),
+                            "supervisor_id": str(lecturer["_id"]),
                             "name": supervisor_name,
-                            "email": supervisor_lecturer.get("email", ""),
-                            "phone": supervisor_lecturer.get("phone", ""),
-                            "position": supervisor_lecturer.get("position", ""),
-                            "title": supervisor_lecturer.get("title", ""),
-                            "bio": supervisor_lecturer.get("bio", ""),
-                            "academic_id": supervisor_lecturer.get("academicId", ""),
-                            "office_hours": supervisor_lecturer.get("officeHours", ""),
-                            "office_location": supervisor_lecturer.get("officeLocation", "")
+                            "email": lecturer.get("email", ""),
+                            "phone": lecturer.get("phone", ""),
+                            "position": lecturer.get("position", ""),
+                            "title": lecturer.get("title", ""),
+                            "bio": lecturer.get("bio", ""),
+                            "academic_id": lecturer.get("academicId", ""),
+                            "office_hours": lecturer.get("officeHours", ""),
+                            "office_location": lecturer.get("officeLocation", "")
                         }
 
                 # Get project area details
                 if fyp.get("projectArea"):
-                    project_area_doc = await self.db["project_areas"].find_one({"_id": fyp["projectArea"]})
+                    project_area_doc = await self.db["project_areas"].find_one({"_id": ObjectId(fyp["projectArea"])})
                     if project_area_doc:
                         project_area = {
                             "project_area_id": str(project_area_doc["_id"]),
@@ -361,6 +362,7 @@ class StudentController:
 
             # Format student name
             student_name = f"{student.get('surname', '')} {student.get('otherNames', '')}".strip()
+            # print(lecturer)
 
             detailed_student = {
                 "student": {
