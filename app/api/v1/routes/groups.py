@@ -1,20 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.core.authentication.auth_middleware import get_current_token
+from app.core.authentication.auth_middleware import get_current_token, RoleBasedAccessControl
 from app.core.database import get_db
 from app.schemas.groups import GroupCreate, GroupPublic, GroupUpdate, Page, GroupAddStudent, GroupRemoveStudent, GroupWithStudents
 from app.schemas.token import TokenData
 from app.controllers.groups import GroupController
 
 router = APIRouter(tags=["Groups"])
-
+require_coordinator = RoleBasedAccessControl(["projects_coordinator"])
 
 @router.get("/groups", response_model=Page)
 async def get_all_groups(
     limit: int = Query(10, alias="limit", ge=1, le=100),
     cursor: str | None = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_coordinator)
 ):
     controller = GroupController(db)
     return await controller.get_all_groups(limit=limit, cursor=cursor)
@@ -24,7 +25,7 @@ async def get_all_groups(
 async def get_group(
     id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    # current_user: TokenData = Depends(get_current_token),
+    current_user: TokenData = Depends(require_coordinator)
 ):
     controller = GroupController(db)
     return await controller.get_group_by_id(id)
@@ -90,7 +91,7 @@ async def remove_student_from_group(
 async def get_group_with_students(
     id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    # current_user: TokenData = Depends(get_current_token),
+    current_user: TokenData = Depends(require_coordinator)
 ):
     controller = GroupController(db)
     return await controller.get_group_with_students(id)
@@ -100,7 +101,7 @@ async def get_group_with_students(
 async def get_groups_by_student(
     student_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
-    # current_user: TokenData = Depends(get_current_token),
+    current_user: TokenData = Depends(require_coordinator)
 ):
     controller = GroupController(db)
     return await controller.get_groups_by_student(student_id)
