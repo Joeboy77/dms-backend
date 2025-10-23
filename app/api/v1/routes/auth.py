@@ -93,3 +93,17 @@ async def login_user(
     )
 
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.post("/auth/logout")
+async def logout_user(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    """
+    Logout endpoint to invalidate user session.
+    In a stateless JWT system, logout is typically handled client-side by removing the token.
+    This endpoint can be used for logging purposes or to invalidate tokens on the server side.
+    """
+
+    
+    return {"message": "Logout successful", "success": True}
