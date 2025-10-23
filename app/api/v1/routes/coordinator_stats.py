@@ -85,3 +85,62 @@ async def get_recent_activities(
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching recent activities: {str(e)}")
+
+
+@router.get("/coordinator/reminders")
+async def get_reminders(
+    limit: int = 10,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_coordinator)
+):
+    """
+    Get reminders for project coordinator dashboard.
+    Returns upcoming reminders/events with dates and times.
+    """
+    try:
+        from datetime import datetime, timedelta
+        
+        current_date = datetime.utcnow()
+        
+        total_reminders = await db["reminders"].count_documents({})
+        
+        reminders = await db["reminders"].find(
+            {
+                "date": {"$gte": current_date.strftime("%Y-%m-%d")}
+            },
+            {"_id": 1, "title": 1, "description": 1, "date": 1, "time": 1, "type": 1}
+        ).sort("date", 1).limit(limit).to_list(length=limit)
+        
+        formatted_reminders = []
+        for reminder in reminders:
+            try:
+                reminder_date = datetime.strptime(reminder.get("date", ""), "%Y-%m-%d")
+                day_of_week = reminder_date.strftime("%A")
+                formatted_date = reminder_date.strftime("%B %d")
+            except:
+                day_of_week = "Unknown"
+                formatted_date = reminder.get("date", "")
+            
+            formatted_reminders.append({
+                "id": str(reminder["_id"]),
+                "title": reminder.get("title", ""),
+                "description": reminder.get("description", ""),
+                "date": reminder.get("date", ""),
+                "formatted_date": formatted_date,
+                "day_of_week": day_of_week,
+                "time": reminder.get("time", "7:30 am"),
+                "type": reminder.get("type", "reminder")
+            })
+        
+        return {
+            "reminders": formatted_reminders,
+            "pagination": {
+                "current_page": 1,
+                "per_page": limit,
+                "total": total_reminders,
+                "showing": f"1-{len(formatted_reminders)} of {total_reminders}"
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching reminders: {str(e)}")
