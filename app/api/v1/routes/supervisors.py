@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.core.authentication.auth_middleware import get_current_token
+from app.core.authentication.auth_middleware import get_current_token, RoleBasedAccessControl
 from app.core.database import get_db
 from app.schemas.supervisors import (
     SupervisorCreate,
@@ -18,12 +18,15 @@ from app.controllers.supervisors import SupervisorController
 
 router = APIRouter(tags=["Supervisors"])
 
+require_coordinator = RoleBasedAccessControl(["projects_coordinator"])
+
 
 @router.get("/supervisors", response_model=Page)
 async def get_all_supervisors(
     limit: int = Query(10, alias="limit", ge=1, le=100),
     cursor: str | None = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_coordinator)
 ):
     controller = SupervisorController(db)
     return await controller.get_all_supervisors(limit=limit, cursor=cursor)
@@ -34,6 +37,7 @@ async def get_all_supervisors_with_lecturer_details(
     limit: int = Query(10, alias="limit", ge=1, le=100),
     cursor: str | None = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_coordinator)
 ):
     controller = SupervisorController(db)
     return await controller.get_all_supervisors_with_lecturer_details(limit=limit, cursor=cursor)
