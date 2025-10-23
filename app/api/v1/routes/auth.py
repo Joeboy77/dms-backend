@@ -124,17 +124,27 @@ async def login_user(
 
     # ---- Determine role ----
     role_value = user_type
-    roles_list = login.get("roles", []) or []
-    if roles_list:
-        try:
-            first_role = await db["roles"].find_one({"_id": roles_list[0]})
-            if first_role:
-                role_value = first_role.get("slug") or first_role.get("title") or str(first_role.get("_id"))
-            elif isinstance(roles_list[0], str):
-                role_value = roles_list[0]
-        except Exception:
-            if isinstance(roles_list[0], str):
-                role_value = roles_list[0]
+    
+    # Special role mapping for lecturers
+    if user_type == "lecturer":
+        academic_id = login.get("academicId")
+        if academic_id == "LEC2025003":
+            role_value = "projects_coordinator"
+        else:
+            role_value = "projects_supervisor"
+    else:
+        # For students, check roles from database if available
+        roles_list = login.get("roles", []) or []
+        if roles_list:
+            try:
+                first_role = await db["roles"].find_one({"_id": roles_list[0]})
+                if first_role:
+                    role_value = first_role.get("slug") or first_role.get("title") or str(first_role.get("_id"))
+                elif isinstance(roles_list[0], str):
+                    role_value = roles_list[0]
+            except Exception:
+                if isinstance(roles_list[0], str):
+                    role_value = roles_list[0]
 
     # ---- Create JWT ----
     token_data = {

@@ -5,6 +5,7 @@ from app.api.v1.routes import (
     auth,
     # logins,
     activity_logs,
+    coordinator_stats,
     database,
     deliverables,
     fypcheckins,
@@ -69,6 +70,7 @@ app.include_router(complaints.router, prefix=settings.API_V1_STR)
 app.include_router(supervisors.router, prefix=settings.API_V1_STR)
 app.include_router(communications.router, prefix=settings.API_V1_STR)
 app.include_router(enhanced_supervisor_interests.router, prefix=settings.API_V1_STR)
+app.include_router(coordinator_stats.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/", include_in_schema=False)
