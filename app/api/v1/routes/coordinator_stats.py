@@ -54,32 +54,86 @@ async def get_recent_activities(
 ):
     """
     Get recent activities for project coordinator dashboard.
-    Returns paginated list of recent activities with pagination info.
+    Returns unified timeline of coordinator actions and student submissions.
     """
     try:
-        total_activities = await db["activity_logs"].count_documents({})
+        from datetime import datetime, timedelta
         
-        activities = await db["activity_logs"].find(
+        # Get coordinator activity logs
+        coordinator_activities = await db["activity_logs"].find(
             {},
-            {"_id": 1, "description": 1, "timestamp": 1, "type": 1}
-        ).sort("timestamp", -1).limit(limit).to_list(length=limit)
+            {"_id": 1, "description": 1, "timestamp": 1, "type": 1, "user_name": 1}
+        ).sort("timestamp", -1).limit(limit * 2).to_list(length=limit * 2)
         
-        formatted_activities = []
-        for activity in activities:
-            formatted_activities.append({
-                "id": str(activity["_id"]),
+        # Get recent student submissions
+        recent_submissions = await db["submissions"].find(
+            {},
+            {"_id": 1, "createdAt": 1, "status": 1, "group_id": 1, "deliverable_id": 1, "student_id": 1}
+        ).sort("createdAt", -1).limit(limit * 2).to_list(length=limit * 2)
+        
+        # Format coordinator activities
+        formatted_coordinator_activities = []
+        for activity in coordinator_activities:
+            formatted_coordinator_activities.append({
+                "id": f"coord_{str(activity['_id'])}",
                 "description": activity.get("description", ""),
                 "timestamp": activity.get("timestamp"),
-                "type": activity.get("type", "assignment")
+                "type": activity.get("type", "coordinator_action"),
+                "by": activity.get("user_name", "Coordinator"),
+                "source": "coordinator"
             })
         
+        # Format student submissions with student and deliverable details
+        formatted_student_activities = []
+        for submission in recent_submissions:
+            # Get student details
+            student = await db["students"].find_one({"_id": submission.get("student_id")})
+            student_name = "Unknown Student"
+            if student:
+                student_name = f"{student.get('surname', '')} {student.get('otherNames', '')}".strip()
+            
+            # Get deliverable details
+            deliverable = await db["deliverables"].find_one({"_id": submission.get("deliverable_id")})
+            deliverable_name = "Unknown Deliverable"
+            if deliverable:
+                deliverable_name = deliverable.get("title", "Unknown Deliverable")
+            
+            # Get group details if applicable
+            group_name = ""
+            if submission.get("group_id"):
+                group = await db["groups"].find_one({"_id": submission.get("group_id")})
+                if group:
+                    group_name = f" (Group: {group.get('name', 'Unknown Group')})"
+            
+            formatted_student_activities.append({
+                "id": f"sub_{str(submission['_id'])}",
+                "description": f"{student_name} submitted {deliverable_name}{group_name}",
+                "timestamp": submission.get("createdAt"),
+                "type": "student_submission",
+                "by": student_name,
+                "source": "student",
+                "status": submission.get("status", "submitted")
+            })
+        
+        # Combine and sort all activities by timestamp
+        all_activities = formatted_coordinator_activities + formatted_student_activities
+        all_activities.sort(key=lambda x: x["timestamp"], reverse=True)
+        
+        # Limit to requested number
+        limited_activities = all_activities[:limit]
+        
+        # Get total count for pagination
+        total_coordinator_activities = await db["activity_logs"].count_documents({})
+        total_student_submissions = await db["submissions"].count_documents({})
+        total_activities = total_coordinator_activities + total_student_submissions
+        
         return {
-            "activities": formatted_activities,
+            "activities": limited_activities,
             "pagination": {
                 "current_page": 1,
                 "per_page": limit,
                 "total": total_activities,
-                "showing": f"1-{len(formatted_activities)} of {total_activities}"
+                "showing": f"1-{len(limited_activities)} of {total_activities}"
             }
         }
         

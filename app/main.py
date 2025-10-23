@@ -18,6 +18,7 @@ from app.api.v1.routes import (
     lecturers,
     models,
     programs,
+    supervisor_stats,
     project_areas,
     recent_activities,
     reminders,
@@ -75,6 +76,7 @@ app.include_router(enhanced_supervisor_interests.router, prefix=settings.API_V1_
 app.include_router(coordinator_stats.router, prefix=settings.API_V1_STR)
 app.include_router(coordinator_project_areas.router, prefix=settings.API_V1_STR)
 app.include_router(coordinator_logs.router, prefix=settings.API_V1_STR)
+app.include_router(supervisor_stats.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/", include_in_schema=False)
