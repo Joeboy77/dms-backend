@@ -5,6 +5,7 @@ class UserInfo(BaseModel):
     academicId: str
     role: str
     user_type: str
+    isFirstLogin: Optional[bool] = False
 
 class Token(BaseModel):
     access_token: str

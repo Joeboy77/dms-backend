@@ -490,6 +490,80 @@ async def update_deliverable(
         raise HTTPException(status_code=500, detail=f"Error updating deliverable: {str(e)}")
 
 
+@router.put("/supervisor/deliverables/{deliverable_id}")
+async def update_deliverable(
+    deliverable_id: str,
+    request: dict,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_supervisor)
+):
+    """
+    Update a deliverable.
+    """
+    try:
+        from bson import ObjectId
+        
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
+        
+        supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
+        if not supervisor:
+            raise HTTPException(status_code=404, detail="Supervisor not found")
+        
+        supervisor_id = supervisor["_id"]
+        
+        # Check if deliverable exists and belongs to supervisor
+        deliverable = await db["deliverables"].find_one({
+            "_id": ObjectId(deliverable_id),
+            "supervisor_id": supervisor_id
+        })
+        
+        if not deliverable:
+            raise HTTPException(status_code=404, detail="Deliverable not found")
+        
+        # Extract update data from request
+        update_data = {
+            "updatedAt": datetime.utcnow()
+        }
+        
+        if "name" in request:
+            update_data["name"] = request["name"]
+        if "start_date" in request:
+            update_data["start_date"] = request["start_date"]
+        if "end_date" in request:
+            update_data["end_date"] = request["end_date"]
+        if "instructions" in request:
+            update_data["instructions"] = request["instructions"]
+        
+        # Update the deliverable
+        await db["deliverables"].update_one(
+            {"_id": ObjectId(deliverable_id)},
+            {"$set": update_data}
+        )
+        
+        # Get the updated deliverable
+        updated_deliverable = await db["deliverables"].find_one({"_id": ObjectId(deliverable_id)})
+        
+        return {
+            "message": "Deliverable updated successfully",
+            "deliverable": {
+                "id": str(updated_deliverable["_id"]),
+                "name": updated_deliverable["name"],
+                "start_date": updated_deliverable["start_date"],
+                "end_date": updated_deliverable["end_date"],
+                "instructions": updated_deliverable.get("instructions", ""),
+                "uploaded_templates": updated_deliverable.get("template_files", []),
+                "created_at": updated_deliverable["createdAt"],
+                "updated_at": updated_deliverable["updatedAt"],
+                "total_submissions": updated_deliverable.get("total_submissions", 0)
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating deliverable: {str(e)}")
+
+
 @router.delete("/supervisor/deliverables/{deliverable_id}")
 async def delete_deliverable(
     deliverable_id: str,

@@ -86,6 +86,14 @@ async def login_user(
         expires_delta=timedelta(days=settings.ACCESS_TOKEN_EXPIRE_DAYS),
     )
 
+    # ---- Check if this is first login ----
+    is_first_login = False
+    if user_type == "student":
+        # Check if lastLogin field exists and is None/empty
+        last_login = login.get("lastLogin")
+        if last_login is None:
+            is_first_login = True
+
     # ---- Update last login and token ----
     await db[user_type + "s"].update_one(
         {"_id": login["_id"]},
@@ -98,7 +106,8 @@ async def login_user(
         "user": {
             "academicId": login.get("academicId"),
             "role": role_value,
-            "user_type": user_type
+            "user_type": user_type,
+            "isFirstLogin": is_first_login
         }
     }
 

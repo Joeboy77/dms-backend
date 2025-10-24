@@ -34,6 +34,7 @@ from app.api.v1.routes import (
     academic_years,
     communications,
     enhanced_supervisor_interests,
+    websocket_chat,
 )
 from app.core.config import settings
 
@@ -85,6 +86,7 @@ app.include_router(supervisor_reminders.router, prefix=settings.API_V1_STR)
 app.include_router(supervisor_students.router, prefix=settings.API_V1_STR)
 app.include_router(supervisor_deliverables.router, prefix=settings.API_V1_STR)
 app.include_router(supervisor_submissions.router, prefix=settings.API_V1_STR)
+app.include_router(websocket_chat.router, prefix=settings.API_V1_STR)
 
 
 @app.get("/", include_in_schema=False)
