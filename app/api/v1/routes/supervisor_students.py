@@ -4,6 +4,7 @@ from app.core.database import get_db
 from app.core.authentication.auth_middleware import get_current_token, RoleBasedAccessControl, TokenData
 from pydantic import BaseModel
 from typing import List, Optional
+from bson import ObjectId
 
 router = APIRouter(tags=["Supervisor Students"])
 
@@ -61,7 +62,7 @@ async def get_supervisor_students(
         student_ids = [fyp["student"] for fyp in students_under_supervisor]
         
         supervisor_groups = await db["groups"].find(
-            {"supervisor_id": supervisor_id, "status": "active"}
+            {"supervisor": supervisor_id, "status": "active"}
         ).to_list(length=None)
         
         result_data = []
@@ -70,7 +71,7 @@ async def get_supervisor_students(
         
         if view == "groups" or view == "all":
             for group in supervisor_groups:
-                group_member_ids = group.get("student_ids", [])
+                group_member_ids = group.get("members", [])
                 group_members = []
                 member_images = []
                 
@@ -107,15 +108,20 @@ async def get_supervisor_students(
                 student = await db["students"].find_one({"_id": ObjectId(student_id)})
                 if student:
                     is_in_group = await db["groups"].find_one({
-                        "student_ids": ObjectId(student_id),
-                        "status": "active"
+                        "members": ObjectId(student_id)
                     })
                     
                     if is_in_group:
                         continue
                     
-                    program = await db["programs"].find_one({"_id": student.get("program")})
-                    program_name = program.get("name", "Unknown Program") if program else "Unknown Program"
+
+                    program_field = student.get("program", "")
+                    if isinstance(program_field, str) and len(program_field) == 24:
+                        program = await db["programs"].find_one({"_id": ObjectId(program_field)})
+                        program_name = program.get("name", "Unknown Program") if program else "Unknown Program"
+                    else:
+
+                        program_name = program_field if program_field else "Unknown Program"
                     
                     project_status_value = await get_student_project_status(student_id, db)
                     
@@ -216,7 +222,7 @@ async def create_group_from_students(
             "name": group_request.group_name,
             "project_topic": group_request.project_topic or "",
             "supervisor": supervisor_id,
-            "student_ids": [ObjectId(sid) for sid in group_request.student_ids],
+            "members": [ObjectId(sid) for sid in group_request.student_ids],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
             "status": "active"
@@ -231,7 +237,7 @@ async def create_group_from_students(
                 "id": str(created_group["_id"]),
                 "name": created_group["name"],
                 "project_topic": created_group["project_topic"],
-                "student_count": len(group_request.student_ids),
+                "member_count": len(group_request.student_ids),
                 "created_at": created_group["created_at"]
             }
         }
@@ -268,7 +274,7 @@ async def create_direct_group(
             "name": group_request.group_name,
             "project_topic": group_request.project_topic or "",
             "supervisor": supervisor_id,
-            "student_ids": [],
+            "members": [],
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
             "status": "active"
@@ -294,47 +300,66 @@ async def create_direct_group(
 
 async def get_group_project_status(group_member_ids: list, db: AsyncIOMotorDatabase) -> str:
     """
-    Determine group's project status based on member submissions and deliverables.
+    Determine group's project status based on group submissions and deliverables.
     Returns: "Not Started", "In Progress", "Changes Requested", or "Completed"
     """
     try:
         if not group_member_ids:
             return "Not Started"
         
-        total_submissions = 0
-        completed_submissions = 0
-        
-        for member_id in group_member_ids:
-            member_submissions = await db["submissions"].count_documents({
-                "student_id": member_id
-            })
-            total_submissions += member_submissions
-            
-            member_completed = await db["submissions"].count_documents({
-                "student_id": member_id,
-                "status": "completed"
-            })
-            completed_submissions += member_completed
-        
-        group_deliverables = await db["deliverables"].count_documents({
-            "student_ids": {"$in": group_member_ids}
+        # Find the group that contains these members
+        group = await db["groups"].find_one({
+            "members": {"$in": group_member_ids},
+            "status": "active"
         })
         
-        if total_submissions == 0 and group_deliverables == 0:
+        if not group:
             return "Not Started"
-        elif completed_submissions >= group_deliverables and group_deliverables > 0:
+        
+        group_id = group["_id"]
+        
+        # Get group submissions (not individual student submissions)
+        group_submissions = await db["submissions"].find({
+            "group_id": group_id
+        }).to_list(length=None)
+        
+        # Get deliverables for the supervisor of this group
+        supervisor_id = group.get("supervisor")
+        if not supervisor_id:
+            return "Not Started"
+            
+        total_deliverables = await db["deliverables"].count_documents({
+            "supervisor_id": supervisor_id
+        })
+        
+        if not group_submissions and total_deliverables == 0:
+            return "Not Started"
+        elif not group_submissions:
+            return "Not Started"
+        
+        # Check submission statuses
+        approved_count = 0
+        changes_requested_count = 0
+        in_progress_count = 0
+        
+        for submission in group_submissions:
+            status = submission.get("status", "not_started")
+            if status == "approved":
+                approved_count += 1
+            elif status == "changes_requested":
+                changes_requested_count += 1
+            elif status in ["in_progress", "pending_review"]:
+                in_progress_count += 1
+        
+        # Determine overall status
+        if changes_requested_count > 0:
+            return "Changes Requested"
+        elif approved_count == total_deliverables and total_deliverables > 0:
             return "Completed"
-        elif total_submissions > 0:
-            changes_requested = await db["submissions"].count_documents({
-                "student_id": {"$in": group_member_ids},
-                "status": "changes_requested"
-            })
-            if changes_requested > 0:
-                return "Changes Requested"
-            else:
-                return "In Progress"
-        else:
+        elif in_progress_count > 0 or len(group_submissions) > 0:
             return "In Progress"
+        else:
+            return "Not Started"
             
     except Exception:
         return "Not Started"
@@ -351,7 +376,7 @@ async def get_group_reports_count(group_id: str, db: AsyncIOMotorDatabase) -> in
         if not group:
             return 0
         
-        member_ids = group.get("student_ids", [])
+        member_ids = group.get("members", [])
         if not member_ids:
             return 0
         
@@ -377,7 +402,7 @@ async def get_student_project_status(student_id: str, db: AsyncIOMotorDatabase) 
         })
         
         deliverables_count = await db["deliverables"].count_documents({
-            "student_ids": ObjectId(student_id)
+            "members": ObjectId(student_id)
         })
         
         if submissions_count == 0 and deliverables_count == 0:
@@ -407,13 +432,13 @@ async def get_student_group_info(student_id: str, db: AsyncIOMotorDatabase) -> d
         from bson import ObjectId
         
         group = await db["groups"].find_one({
-            "student_ids": ObjectId(student_id),
+            "members": ObjectId(student_id),
             "status": "active"
         })
         
         if group:
             other_students = []
-            for other_student_id in group["student_ids"]:
+            for other_student_id in group["members"]:
                 if str(other_student_id) != student_id:
                     other_student = await db["students"].find_one({"_id": other_student_id})
                     if other_student:
@@ -461,3 +486,278 @@ async def get_student_reports_count(student_id: str, db: AsyncIOMotorDatabase) -
         
     except Exception:
         return 0
+
+
+@router.get("/supervisor/groups/{group_id}/details")
+async def get_group_details(
+    group_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_supervisor)
+):
+    """
+    Get detailed information about a group including all members and submissions.
+    """
+    try:
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
+        
+        supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
+        if not supervisor:
+            raise HTTPException(status_code=404, detail="Supervisor not found")
+        
+        supervisor_id = supervisor["_id"]
+        
+        # Get group details
+        group = await db["groups"].find_one({
+            "_id": ObjectId(group_id),
+            "supervisor": supervisor_id,
+            "status": "active"
+        })
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found")
+        
+        # Get all group members with their details
+        group_members = []
+        for student_id in group.get("members", []):  # Changed from "student_ids" to "members"
+            student = await db["students"].find_one({"_id": student_id})
+            if student:
+                # Check if program is an ObjectId or a string
+                program_field = student.get("program", "")
+                if isinstance(program_field, str) and len(program_field) == 24:
+                    # It's an ObjectId, look it up
+                    program = await db["programs"].find_one({"_id": ObjectId(program_field)})
+                    program_name = program.get("name", "Unknown Program") if program else "Unknown Program"
+                else:
+                    # It's already a program name
+                    program_name = program_field if program_field else "Unknown Program"
+                
+                group_members.append({
+                    "id": str(student["_id"]),
+                    "academic_id": student.get("academicId", ""),
+                    "name": student.get("name", ""),  # Use direct name field
+                    "program": program_name,
+                    "image": student.get("image", ""),
+                    "email": student.get("email", "")
+                })
+        
+        # Get all deliverables for this supervisor
+        deliverables = await db["deliverables"].find({
+            "supervisor_id": supervisor_id
+        }).sort("created_at", 1).to_list(length=None)
+        
+        # Get submissions for each deliverable
+        submissions_data = []
+        for deliverable in deliverables:
+            deliverable_id = deliverable["_id"]
+            
+            # Get submission for this group and deliverable
+            submission = await db["submissions"].find_one({
+                "group_id": ObjectId(group_id),
+                "deliverable_id": deliverable_id
+            })
+            
+            # Get files for this submission
+            files = []
+            if submission:
+                files = await db["submission_files"].find({
+                    "submission_id": submission["_id"]
+                }).to_list(length=None)
+            
+            submissions_data.append({
+                "deliverable_id": str(deliverable_id),
+                "deliverable_name": deliverable.get("name", ""),
+                "status": submission.get("status", "not_started") if submission else "not_started",
+                "submitted_at": submission.get("createdAt") if submission else None,
+                "files": [
+                    {
+                        "id": str(file["_id"]),
+                        "file_name": file.get("file_name", ""),
+                        "file_path": file.get("file_path", ""),
+                        "file_type": file.get("file_type", ""),
+                        "file_size": file.get("file_size", 0),
+                        "uploaded_at": file.get("createdAt")
+                    }
+                    for file in files
+                ]
+            })
+        
+        return {
+            "group": {
+                "id": str(group["_id"]),
+                "name": group.get("name", ""),
+                "project_topic": group.get("project_topic", ""),
+                "created_at": group.get("created_at"),
+                "member_count": len(group_members),
+                "members": group_members
+            },
+            "submissions": submissions_data
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching group details: {str(e)}")
+
+
+@router.get("/supervisor/students/{student_id}/profile")
+async def get_student_profile(
+    student_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_supervisor)
+):
+    """
+    Get detailed information about an individual student including their submissions.
+    """
+    try:
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
+        
+        supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
+        if not supervisor:
+            raise HTTPException(status_code=404, detail="Supervisor not found")
+        
+        supervisor_id = supervisor["_id"]
+        
+        # Check if student is assigned to this supervisor
+        fyp_assignment = await db["fyps"].find_one({
+            "student": ObjectId(student_id),
+            "supervisor": supervisor_id
+        })
+        
+        if not fyp_assignment:
+            raise HTTPException(status_code=404, detail="Student not found or not assigned to supervisor")
+        
+        # Get student details
+        student = await db["students"].find_one({"_id": ObjectId(student_id)})
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+        
+        # Get student's project topic from FYP assignment
+        project_topic = fyp_assignment.get("project_topic", "")
+        
+        # Get submissions for the student - only show deliverables created by this supervisor
+        submissions = []
+        deliverables = await db["deliverables"].find({
+            "supervisor_id": supervisor_id
+        }).to_list(length=None)
+        
+        for deliverable in deliverables:
+            submission = await db["submissions"].find_one({
+                "student_id": ObjectId(student_id),
+                "deliverable_id": deliverable["_id"]
+            })
+            
+            files = []
+            if submission:
+                file_ids = submission.get("files", [])
+                for file_id in file_ids:
+                    file_doc = await db["files"].find_one({"_id": ObjectId(file_id)})
+                    if file_doc:
+                        files.append({
+                            "id": str(file_doc["_id"]),
+                            "file_name": file_doc.get("filename", ""),
+                            "file_path": file_doc.get("url", ""),
+                            "file_type": file_doc.get("content_type", ""),
+                            "file_size": file_doc.get("size", 0),
+                            "uploaded_at": file_doc.get("created_at", "").isoformat() if file_doc.get("created_at") else None
+                        })
+            
+            submissions.append({
+                "deliverable_id": str(deliverable["_id"]),
+                "deliverable_name": deliverable.get("name", ""),
+                "status": submission.get("status", "not_started") if submission else "not_started",
+                "submitted_at": submission.get("submitted_at", "").isoformat() if submission and submission.get("submitted_at") else None,
+                "files": files
+            })
+        
+        return {
+            "id": str(student["_id"]),
+            "academic_id": student.get("academicId", ""),
+            "name": student.get("name", ""),
+            "program": student.get("program", ""),
+            "image": student.get("image", ""),
+            "email": student.get("email", ""),
+            "project_topic": project_topic,
+            "submissions": submissions
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching student profile: {str(e)}")
+
+
+@router.post("/supervisor/groups/{group_id}/add-students")
+async def add_students_to_group(
+    group_id: str,
+    request: dict,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_supervisor)
+):
+    """
+    Add students to an existing group.
+    """
+    try:
+        supervisor_academic_id = current_user.email
+        if not supervisor_academic_id:
+            raise HTTPException(status_code=401, detail="Invalid token: missing supervisor ID")
+        
+        supervisor = await db["lecturers"].find_one({"academicId": supervisor_academic_id})
+        if not supervisor:
+            raise HTTPException(status_code=404, detail="Supervisor not found")
+        
+        supervisor_id = supervisor["_id"]
+        
+        # Get the group
+        group = await db["groups"].find_one({
+            "_id": ObjectId(group_id),
+            "supervisor": supervisor_id
+        })
+        
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found or not assigned to supervisor")
+        
+        student_ids = request.get("student_ids", [])
+        if not student_ids:
+            raise HTTPException(status_code=400, detail="No student IDs provided")
+        
+        # Validate that all students are assigned to this supervisor and not already in groups
+        for student_id in student_ids:
+            # Check if student is assigned to this supervisor
+            fyp_assignment = await db["fyps"].find_one({
+                "student": ObjectId(student_id),
+                "supervisor": supervisor_id
+            })
+            
+            if not fyp_assignment:
+                raise HTTPException(status_code=400, detail=f"Student {student_id} is not assigned to this supervisor")
+            
+            # Check if student is already in a group
+            existing_group = await db["groups"].find_one({
+                "members": ObjectId(student_id)
+            })
+            
+            if existing_group:
+                raise HTTPException(status_code=400, detail=f"Student {student_id} is already in a group")
+        
+        # Add students to the group
+        await db["groups"].update_one(
+            {"_id": ObjectId(group_id)},
+            {
+                "$addToSet": {
+                    "members": {"$each": [ObjectId(sid) for sid in student_ids]}
+                }
+            }
+        )
+        
+        # Update member_count
+        updated_group = await db["groups"].find_one({"_id": ObjectId(group_id)})
+        member_count = len(updated_group.get("members", []))
+        
+        await db["groups"].update_one(
+            {"_id": ObjectId(group_id)},
+            {"$set": {"member_count": member_count}}
+        )
+        
+        return {"message": f"Successfully added {len(student_ids)} student(s) to the group"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error adding students to group: {str(e)}")
