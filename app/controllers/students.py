@@ -43,23 +43,7 @@ class StudentController:
         result = await self.collection.insert_one(student_data)
         created_student = await self.collection.find_one({"_id": result.inserted_id})
         
-        # try:
-        #     login_coll = self.db["logins"]
-        #     existing_login = await login_coll.find_one({"academicId": student_data.get("academicId")})
-        #     if not existing_login and student_data.get("pin"):
-        #         login_doc = {
-        #             "academicId": student_data.get("academicId"),
-        #             # store hashed pin in the logins collection
-        #             "pin": student_data.get("pin"),
-        #             "roles": ["student"],
-        #             "createdAt": datetime.now(),
-        #             "updatedAt": datetime.now(),
-        #         }
-        #         await login_coll.insert_one(login_doc)
-        # except Exception:
-        #     # intentionally ignore login creation errors here
-        #     pass
-
+        
         return created_student
 
     async def update_student(self, student_id: str, update_data: dict):
@@ -102,22 +86,21 @@ class StudentController:
         count = await self.collection.count_documents({})
         return {"total_students": count}
 
-    from bson import ObjectId
 
     async def get_students_by_project_area(self, project_area_id: str):
-        print("🔍 Searching FYPs for projectArea:", project_area_id)
+        print("Searching FYPs for projectArea:", project_area_id)
 
         # Build query that matches both string and ObjectId
         query = {"$or": [{"projectArea": project_area_id}]}
         try:
             query["$or"].append({"projectArea": ObjectId(project_area_id)})
         except Exception as e:
-            print("⚠️ Invalid ObjectId format:", e)
+            print("Invalid ObjectId format:", e)
 
         fyps = await self.db["fyps"].find(query).to_list(None)
-        print(f"📦 Found {len(fyps)} FYP(s)")
+        print(f"Found {len(fyps)} FYP(s)")
         if fyps:
-            print("🧾 Example FYP:", fyps[0])
+            print("Example FYP:", fyps[0])
 
         students_data = []
         for fyp in fyps:
@@ -125,7 +108,7 @@ class StudentController:
             if not student_id:
                 continue
 
-            # ✅ Convert student_id safely
+            # Convert student_id safely
             try:
                 student_obj_id = ObjectId(student_id)
             except Exception:
@@ -133,10 +116,10 @@ class StudentController:
 
             student = await self.collection.find_one({"_id": student_obj_id})
             if not student:
-                print(f"⚠️ No student found for FYP {fyp['_id']}")
+                print(f"No student found for FYP {fyp['_id']}")
                 continue
 
-            # ✅ Convert program_id safely
+            # Convert program_id safely
             program = None
             if student.get("program"):
                 try:
@@ -145,7 +128,7 @@ class StudentController:
                     program_obj_id = student["program"]
                 program = await self.db["programs"].find_one({"_id": program_obj_id})
 
-            # ✅ Convert supervisor_id safely
+            # Convert supervisor_id safely
             supervisor_doc = None
             if fyp.get("supervisor"):
                 try:
@@ -162,7 +145,7 @@ class StudentController:
                     lecturer_obj_id = supervisor_doc["lecturer_id"]
                 supervisor = await self.db["lecturers"].find_one({"_id": lecturer_obj_id})
 
-            # 🧱 Assemble final student info
+            # Assemble final student info
             students_data.append({
                 "student_id": str(student["_id"]),
                 "student_name": f"{student.get('surname', '')} {student.get('otherNames', '')}".strip(),
@@ -171,7 +154,7 @@ class StudentController:
                 "fyp_id": str(fyp["_id"]),
             })
 
-        print("✅ Returning", len(students_data), "students")
+        print("Returning", len(students_data), "students")
         return students_data
 
 
@@ -244,26 +227,38 @@ class StudentController:
 
         return students_data
 
+
+
     async def assign_students_to_supervisor(self, student_ids: list[str], academic_year_id: str, supervisor_id: str):
-        # Get the fypcheckin_id from academic year
+        # Get the checkin record
         checkin = await self.db["fypcheckins"].find_one({"academicYear": academic_year_id})
         if not checkin:
             raise HTTPException(status_code=404, detail="FYP checkin not found for the academic year")
 
         checkin_id = checkin["_id"]
 
+        # Fetch supervisor and linked lecturer
+        supervisor = await self.db["supervisors"].find_one({"_id": ObjectId(supervisor_id)})
+        if not supervisor:
+            raise HTTPException(status_code=404, detail="Supervisor not found")
+
+        lecturer = await self.db["lecturers"].find_one({"_id": ObjectId(supervisor["lecturer_id"])})
+        if not lecturer:
+            raise HTTPException(status_code=404, detail="Lecturer for supervisor not found")
+
         created_assignments = []
         assignment_errors = []
 
+        # Assign students
         for student_id in student_ids:
             try:
-                # Verify student exists - lookup by academicId instead of ObjectId
+                # Verify student exists
                 student = await self.collection.find_one({"academicId": student_id})
                 if not student:
                     assignment_errors.append(f"Student {student_id} not found")
                     continue
 
-                # Check if student already has an assignment for this checkin
+                # Check if already assigned
                 existing_fyp = await self.db["fyps"].find_one({
                     "student": student["_id"],
                     "checkin": checkin_id
@@ -272,21 +267,20 @@ class StudentController:
                     assignment_errors.append(f"Student {student_id} already assigned to a supervisor for this academic year")
                     continue
 
-                # Create FYP assignment
+                # Create assignment
                 fyp_data = {
                     "student": student["_id"],
                     "checkin": checkin_id,
                     "supervisor": ObjectId(supervisor_id),
-                    "projectArea": None,  # To be assigned later if needed
-                    "createdAt": datetime.now(),
-                    "updatedAt": datetime.now()
+                    "projectArea": None,
+                    "createdAt": datetime.utcnow(),
+                    "updatedAt": datetime.utcnow()
                 }
 
                 result = await self.db["fyps"].insert_one(fyp_data)
                 created_fyp = await self.db["fyps"].find_one({"_id": result.inserted_id})
 
-                # Convert ObjectIds to strings for JSON serialization
-                serializable_fyp = {
+                created_assignments.append({
                     "fyp_id": str(created_fyp["_id"]),
                     "student_id": str(created_fyp["student"]),
                     "supervisor_id": str(created_fyp["supervisor"]),
@@ -294,19 +288,43 @@ class StudentController:
                     "project_area_id": str(created_fyp["projectArea"]) if created_fyp["projectArea"] else None,
                     "created_at": created_fyp["createdAt"],
                     "updated_at": created_fyp["updatedAt"]
-                }
-                created_assignments.append(serializable_fyp)
+                })
 
             except Exception as e:
                 assignment_errors.append(f"Error assigning student {student_id}: {str(e)}")
 
+        # Log activity after all assignments
+        if created_assignments:
+            try:
+                await self.db["activity_logs"].insert_one({
+                    "description": f"Assigned {len(created_assignments)} student(s) to Supervisor {lecturer.get('title', '')} {lecturer.get('surname', '')} {lecturer.get('otherNames', '')}.",
+                    "action": "student_assignment",
+                    "user_name": lecturer.get("academicId"),
+                    "user_id": str(supervisor["_id"]),
+                    "type": "assignment",
+                    "timestamp": datetime.utcnow(),
+                    "createdAt": datetime.utcnow(),
+                    "updatedAt": datetime.utcnow(),
+                    "details": {
+                        "student_count": len(created_assignments),
+                        "supervisor_name": f"{lecturer.get('title', '')} {lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip(),
+                        "project_area": None,
+                        "assigned_students": student_ids
+                    }
+                })
+            except Exception as log_error:
+                print("Failed to log activity:", log_error)
+
+        # Return response
         return {
-            "message": f"Assignment process completed",
+            "message": "Assignment process completed",
             "successful_assignments": len(created_assignments),
             "failed_assignments": len(assignment_errors),
             "created_assignments": created_assignments,
             "errors": assignment_errors
         }
+
+
 
     async def get_all_students_with_details(self, limit: int = 10, cursor: str | None = None):
         query = {"deleted": {"$ne": True}}

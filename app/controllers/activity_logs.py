@@ -1,24 +1,28 @@
-from datetime import datetime
-
 from bson import ObjectId
 from fastapi import HTTPException
-from motor.motor_asyncio import AsyncIOMotorDatabase
-
 
 class ActivityLogController:
-    def __init__(self, db: AsyncIOMotorDatabase):
+    def __init__(self, db):
         self.db = db
         self.collection = db["activity_logs"]
 
-    async def get_all_logs(self, limit: int = 10, cursor: str | None = None):
+    async def get_logs(self, token, limit: int = 10, cursor: str | None = None, role: str | None = None):
         query = {}
+
+        # Pagination cursor
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}
 
-        logs = await self.collection.find(query).limit(limit).to_list(limit)
+        # Admin can view all logs, optionally filtered by 'type'
+        if token.role.lower() == "admin":
+            if role:
+                query["type"] = role.lower()
+        else:
+            # Non-admin users can only view their own logs
+            query["user_id"] = token.id
 
-        next_cursor = None
-        if len(logs) == limit:
-            next_cursor = str(logs[-1]["_id"])
+        logs = await self.collection.find(query).sort("_id", 1).limit(limit).to_list(limit)
+
+        next_cursor = str(logs[-1]["_id"]) if len(logs) == limit else None
 
         return {"items": logs, "next_cursor": next_cursor}
