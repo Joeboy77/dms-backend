@@ -10,11 +10,15 @@ from app.schemas.token import TokenData
 router = APIRouter(tags=["Activity Logs"])
 
 
-@router.get("/activity_logs", response_model=Page)
+@router.get("/activity_logs")
 async def get_all_logs(
     limit: int = Query(10, alias="limit", ge=1, le=100),
     cursor: str | None = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
-    controller = ActivityLogController(db)
-    return await controller.get_all_logs(limit=limit, cursor=cursor)
+    try:
+        controller = ActivityLogController(db)
+        result = await controller.get_all_logs(limit=limit, cursor=cursor)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching activity logs: {str(e)}")

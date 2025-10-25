@@ -41,8 +41,8 @@ class ChatMessage:
 async def authenticate_websocket(websocket: WebSocket, token: str) -> Optional[TokenData]:
     """Authenticate WebSocket connection using JWT token"""
     try:
-        from app.core.authentication.auth_token import verify_token
-        token_data = verify_token(token)
+        from app.core.authentication.auth_token import verify_access_token
+        token_data = verify_access_token(token)
         return token_data
     except Exception as e:
         logger.error(f"WebSocket authentication failed: {e}")
@@ -81,20 +81,28 @@ async def get_user_info(db: AsyncIOMotorDatabase, user_id: str, user_type: str) 
 @router.websocket("/ws/chat/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str = Query(...)):
     """WebSocket endpoint for real-time chat"""
+    logger.info(f"WebSocket connection attempt: user_id={user_id}, token={token[:20]}...")
+    
     # Authenticate the connection
     token_data = await authenticate_websocket(websocket, token)
     if not token_data:
+        logger.error("WebSocket authentication failed")
         return
+    
+    logger.info(f"WebSocket authentication successful: role={token_data.role}")
     
     # Get user info from database
     from app.core.database import db
     user_info = await get_user_info(db, user_id, token_data.role)
     if not user_info:
+        logger.error(f"User not found: user_id={user_id}, role={token_data.role}")
         await websocket.close(code=1008, reason="User not found")
         return
     
     # Connect the user
+    logger.info(f"Connecting user to WebSocket manager: user_id={user_id}")
     await manager.connect(websocket, user_id, user_info)
+    logger.info(f"User connected successfully: user_id={user_id}")
     
     try:
         while True:
