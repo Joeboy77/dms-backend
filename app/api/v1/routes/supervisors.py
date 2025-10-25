@@ -21,7 +21,7 @@ router = APIRouter(tags=["Supervisors"])
 require_coordinator = RoleBasedAccessControl(["projects_coordinator"])
 
 
-@router.get("/supervisors", response_model=Page)
+@router.get("/supervisors")
 async def get_all_supervisors(
     limit: int = Query(10, alias="limit", ge=1, le=100),
     cursor: str | None = None,
@@ -194,7 +194,7 @@ async def get_supervisor_with_students(
         return {
             "supervisor": {
                 "id": supervisor_id,
-                "name": f"{lecturer.get('firstName', '')} {lecturer.get('lastName', '')}".strip() if lecturer else "",
+                "name": f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip() if lecturer else "",
                 "title": lecturer.get("title", "") if lecturer else "",
                 "email": lecturer.get("email", "") if lecturer else "",
                 "academic_id": lecturer.get("academicId", "") if lecturer else "",

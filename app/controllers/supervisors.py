@@ -22,14 +22,25 @@ class SupervisorController:
             if lecturer:
                 student_count = await self.db["fyps"].count_documents({"supervisor": doc.get("_id")})
 
+                # Create complete supervisor information
+                supervisor_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
+                
                 supervisors.append({
-                    "_id": doc.get("_id"),
-                    "lecturer_id": lecturer["_id"],
-                    "max_students": doc.get("max_students", lecturer.get("max_students")),
-                    "project_student_count": student_count,
+                    "_id": str(doc.get("_id")),
+                    "lecturer_id": str(lecturer["_id"]),
+                    "name": supervisor_name,
+                    "title": lecturer.get("title", ""),
+                    "email": lecturer.get("email", ""),
+                    "phone": lecturer.get("phone", ""),
+                    "position": lecturer.get("position", ""),
+                    "bio": lecturer.get("bio", ""),
+                    "office_hours": lecturer.get("officeHours", ""),
+                    "office_location": lecturer.get("officeLocation", ""),
+                    "academic_id": lecturer.get("academicId", ""),
+                    "max_students": doc.get("max_students", lecturer.get("max_students", 5)),
+                    "current_students": student_count,
                     "createdAt": doc.get("createdAt", lecturer.get("createdAt")),
-                    "updatedAt": doc.get("updatedAt", lecturer.get("updatedAt")),
-                    "academic_id": lecturer.get("academicId")
+                    "updatedAt": doc.get("updatedAt", lecturer.get("updatedAt"))
                 })
 
         next_cursor = None
@@ -53,14 +64,25 @@ class SupervisorController:
 
         student_count = await self.db["fyps"].count_documents({"supervisor": lecturer["_id"]})
 
+        # Create complete supervisor information
+        supervisor_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
+        
         supervisor_data = {
-            "_id": supervisor["_id"],
-            "lecturer_id": lecturer["_id"],
-            "max_students": supervisor.get("max_students", lecturer.get("max_students")),
-            "project_student_count": student_count,
+            "_id": str(supervisor["_id"]),
+            "lecturer_id": str(lecturer["_id"]),
+            "name": supervisor_name,
+            "title": lecturer.get("title", ""),
+            "email": lecturer.get("email", ""),
+            "phone": lecturer.get("phone", ""),
+            "position": lecturer.get("position", ""),
+            "bio": lecturer.get("bio", ""),
+            "office_hours": lecturer.get("officeHours", ""),
+            "office_location": lecturer.get("officeLocation", ""),
+            "academic_id": lecturer.get("academicId", ""),
+            "max_students": supervisor.get("max_students", lecturer.get("max_students", 5)),
+            "current_students": student_count,
             "createdAt": supervisor.get("createdAt", lecturer.get("createdAt")),
-            "updatedAt": supervisor.get("updatedAt", lecturer.get("updatedAt")),
-            "academic_id": lecturer.get("academicId")
+            "updatedAt": supervisor.get("updatedAt", lecturer.get("updatedAt"))
         }
 
         return supervisor_data

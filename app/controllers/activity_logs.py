@@ -13,16 +13,35 @@ class ActivityLogController:
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}
 
-        # Admin can view all logs, optionally filtered by 'type'
-        if token.role.lower() == "admin":
-            if role:
-                query["type"] = role.lower()
-        else:
-            # Non-admin users can only view their own logs
-            query["user_id"] = token.id
+        logs = await self.collection.find(query).sort("_id", -1).limit(limit).to_list(limit)
 
-        logs = await self.collection.find(query).sort("_id", 1).limit(limit).to_list(limit)
+        # Transform logs to match expected frontend format
+        transformed_logs = []
+        for log in logs:
+            # Create a details object that matches the expected schema
+            details = {
+                "status": 200,
+                "message": log.get("description", ""),
+                "requestType": log.get("action", "activity")
+            }
+            
+            transformed_log = {
+                "_id": str(log["_id"]),
+                "action": log.get("action", "activity"),
+                "details": details,
+                "createdAt": log.get("createdAt", log.get("timestamp")),
+                "updatedAt": log.get("updatedAt")
+            }
+            transformed_logs.append(transformed_log)
 
-        next_cursor = str(logs[-1]["_id"]) if len(logs) == limit else None
+        next_cursor = None
+        has_more = False
+        if len(logs) == limit:
+            next_cursor = str(logs[-1]["_id"])
+            has_more = True
 
-        return {"items": logs, "next_cursor": next_cursor}
+        return {
+            "items": transformed_logs, 
+            "next_cursor": next_cursor,
+            "has_more": has_more
+        }
