@@ -1,17 +1,15 @@
-from datetime import datetime
-
 from bson import ObjectId
 from fastapi import HTTPException
-from motor.motor_asyncio import AsyncIOMotorDatabase
-
 
 class ActivityLogController:
-    def __init__(self, db: AsyncIOMotorDatabase):
+    def __init__(self, db):
         self.db = db
         self.collection = db["activity_logs"]
 
-    async def get_all_logs(self, limit: int = 10, cursor: str | None = None):
+    async def get_logs(self, token, limit: int = 10, cursor: str | None = None, role: str | None = None):
         query = {}
+
+        # Pagination cursor
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}
 

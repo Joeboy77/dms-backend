@@ -10,7 +10,7 @@ class Page(BaseModel):
 
 
 class DeliverableCreate(BaseModel):
-    title: str
+    name: str
     start_date: datetime
     end_date: datetime
     supervisor_id: PyObjectId
@@ -20,7 +20,7 @@ class DeliverableCreate(BaseModel):
 
 
 class DeliverableUpdate(BaseModel):
-    title: str | None = None
+    name: str | None = None
     start_date: datetime | None = None
     end_date: datetime | None = None
     supervisor_id: PyObjectId | None = None
@@ -30,7 +30,7 @@ class DeliverableUpdate(BaseModel):
 
 
 class DeliverablePublic(Obj):
-    title: str
+    name: str
     start_date: datetime
     end_date: datetime
     supervisor_id: PyObjectId

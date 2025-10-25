@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from typing import List
 
 from app.core.authentication.auth_middleware import get_current_token
 from app.core.database import get_db
@@ -74,9 +75,7 @@ async def search_project_areas_by_title(
     return await controller.search_project_areas_by_title(title)
 
 
-@router.get(
-    "/project-areas-lecturers", response_model=AllProjectAreasWithLecturers
-)
+@router.get("/project-areas-lecturers", response_model=AllProjectAreasWithLecturers)
 async def get_project_area_with_lecturers(
     db: AsyncIOMotorDatabase = Depends(get_db),
     # current_user: TokenData = Depends(get_current_token),

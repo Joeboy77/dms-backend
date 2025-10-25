@@ -72,24 +72,95 @@ class ProgramController:
         ).to_list(None)
         return programs
 
+    
+    async def get_all_student_dashboard(self):
+        """
+        Return dashboard summary for all students.
+        Each item has the same shape as get_student_dashboard:
+        { student_id, student_image, program, progress_status }
+        """
+        students = await self.db["students"].find({"deleted": {"$ne": True}}).to_list(None)
+
+        out = []
+        for student in students:
+            # resolve program (title stored or ObjectId)
+            program = None
+            if student.get("program"):
+                try:
+                    program = await self.collection.find_one({"_id": ObjectId(student["program"])})
+                except Exception:
+                    program = await self.collection.find_one({"title": student["program"]})
+
+            # find latest FYP for the student (handle ObjectId or string storage)
+            fyp = await self.db["fyps"].find_one(
+                {"$or": [{"student": student["_id"]}, {"student": str(student["_id"])}]},
+                sort=[("createdAt", -1)]
+            )
+
+            progress_status = "not_started"
+            if fyp:
+                # explicit completion signals
+                status_val = (fyp.get("status") or "").lower()
+                completed_statuses = {"completed", "finished", "approved", "graded", "passed"}
+                has_final_submission = bool(fyp.get("finalSubmission") or fyp.get("submitted") or fyp.get("final_submission"))
+                has_grade = fyp.get("grade") is not None
+                defence_done = bool(
+                    fyp.get("defenceCompleted")
+                    or (isinstance(fyp.get("defence"), dict) and fyp["defence"].get("status") in ["completed", "done"])
+                )
+
+                is_completed = (
+                    (status_val in completed_statuses)
+                    or has_final_submission
+                    or has_grade
+                    or defence_done
+                )
+
+                if is_completed:
+                    progress_status = "completed"
+                else:
+                    # fallback to checkin active or presence of fyp -> in_progress
+                    checkin = None
+                    if fyp.get("checkin"):
+                        try:
+                            checkin = await self.db["fypcheckins"].find_one({"_id": ObjectId(fyp["checkin"])})
+                        except Exception:
+                            checkin = await self.db["fypcheckins"].find_one({"_id": fyp["checkin"]})
+                    if checkin and (checkin.get("active") or checkin.get("status") == "active"):
+                        progress_status = "in_progress"
+                    else:
+                        progress_status = "in_progress"
+
+            out.append({
+                "student_id": str(student["_id"]),
+                "student_image": student.get("image", ""),
+                "program": program,
+                "progress_status": progress_status
+            })
+
+        return out
+    
+    
     async def get_student_dashboard(self, student_id: str):
         # Get student details
-        student = await self.db["students"].find_one({"_id": ObjectId(student_id)})
+        # student = await self.db["students"].find_one({"_id": ObjectId(student_id)})
+        student = await self.db["students"].find_one({"academicId": student_id})
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
 
         # Get program details
         program = None
         if student.get("program"):
-            program = await self.collection.find_one({"_id": student["program"]})
+            program = await self.collection.find_one({"title": student["program"]})
 
         # Get FYP details to determine progress
-        fyp = await self.db["fyps"].find_one({"student": ObjectId(student_id)})
+        # fyp = await self.db["fyps"].find_one({"student": ObjectId(student_id)})
+        fyp = await self.db["fyps"].find_one({"student": str(student["_id"])})
 
         progress_status = "not_started"
         if fyp:
             # Get checkin details
-            checkin = await self.db["fypcheckins"].find_one({"_id": fyp["checkin"]})
+            checkin = await self.db["fypcheckins"].find_one({"_id": ObjectId(fyp["checkin"])})
             if checkin and checkin.get("checkin") and checkin.get("active"):
                 progress_status = "in_progress"
 
@@ -99,3 +170,4 @@ class ProgramController:
             "program": program,
             "progress_status": progress_status
         }
+        
