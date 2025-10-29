@@ -161,10 +161,10 @@ async def get_project_area_students_for_coordinator(
             if lecturer:
                 interested_staff.append({
                     "lecturer_id": str(lecturer["_id"]),
-                    "name": lecturer.get("name", ""),
+                    "name": f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip(),
                     "title": lecturer.get("title", ""),
                     "email": lecturer.get("email", ""),
-                    "department": lecturer.get("department", "")
+                    "department": lecturer.get("department", "Computer Science")
                 })
         
         student_controller = StudentController(db)
