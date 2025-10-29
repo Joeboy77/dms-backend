@@ -144,26 +144,53 @@ class ProjectAreaController:
         return {"project_areas": project_areas}
 
 
+   
     async def get_project_area_with_interested_lecturers(self, project_area_id: str):
-        project_area = await self.get_project_area_by_id(project_area_id)
+        try:
+            pa_oid = ObjectId(project_area_id)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid project area id")
 
-        lecturers = []
-        for lecturer_id in project_area.get("interested_staff", []):
-            lecturer = await self.db["lecturers"].find_one({"_id": lecturer_id})
-            if lecturer:
-                lecturers.append({
-                    "lecturer_id": str(lecturer["_id"]),
-                    "name": lecturer.get("name", ""),
-                    "email": lecturer.get("email", ""),
-                    "department": lecturer.get("department", ""),
-                    "title": lecturer.get("title", ""),
-                    "specialization": lecturer.get("specialization", "")
-                })
+        project_area = await self.collection.find_one({"_id": pa_oid})
+        if not project_area:
+            raise HTTPException(status_code=404, detail="Project area not found")
+
+        lecturer_ids = project_area.get("interested_staff", []) or []
+        detailed_lecturers = []
+
+        for lecturer_id in lecturer_ids:
+            # try to normalize to ObjectId, skip if impossible
+            try:
+                lid = lecturer_id if isinstance(lecturer_id, ObjectId) else ObjectId(lecturer_id)
+            except Exception:
+                # skip non-id values
+                continue
+
+            lecturer = await self.db["lecturers"].find_one({"_id": lid})
+            if not lecturer:
+                continue
+
+            detailed_lecturers.append({
+                "lecturer_id": str(lecturer["_id"]),
+                "name": f"{lecturer.get('title','').strip()} {lecturer.get('surname','')} {lecturer.get('otherNames','')}".strip(),
+                "email": lecturer.get("email", ""),
+                "department": lecturer.get("department", "Computer Science"),
+                "title": lecturer.get("title", ""),
+                "specialization": lecturer.get("specialization", ""),
+                "academicId": lecturer.get("academicId", "")
+            })
+
+        # Replace interested_staff with enriched list and set counts/ids consistently
+        project_area["interested_staff"] = detailed_lecturers
+        project_area["interested_staff_count"] = len(detailed_lecturers)
+        project_area["id"] = str(project_area["_id"])
+        project_area["_id"] = str(project_area["_id"])
 
         return {
             "project_area": project_area,
-            "lecturers": lecturers
+            "lecturers": detailed_lecturers
         }
+        
 
     async def add_interested_lecturer(self, project_area_id: str, lecturer_id: str):
         # Check if lecturer exists
