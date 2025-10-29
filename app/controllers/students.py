@@ -126,7 +126,7 @@ class StudentController:
                     program_obj_id = ObjectId(student["program"])
                 except Exception:
                     program_obj_id = student["program"]
-                program = await self.db["programs"].find_one({"_id": program_obj_id})
+                program = await self.db["programs"].find_one({"title": program_obj_id})
 
             # Convert supervisor_id safely
             supervisor_doc = None
