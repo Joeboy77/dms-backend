@@ -172,7 +172,7 @@ class ProjectAreaController:
 
             detailed_lecturers.append({
                 "lecturer_id": str(lecturer["_id"]),
-                "name": f"{lecturer.get('title','').strip()} {lecturer.get('surname','')} {lecturer.get('otherNames','')}".strip(),
+                "name": f"{lecturer.get('surname','')} {lecturer.get('otherNames','')}".strip(),
                 "email": lecturer.get("email", ""),
                 "department": lecturer.get("department", "Computer Science"),
                 "title": lecturer.get("title", ""),
