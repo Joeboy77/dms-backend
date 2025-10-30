@@ -100,6 +100,12 @@ class LecturerController:
             raise HTTPException(status_code=404, detail="Lecturer not found")
         return lecturer
 
+    async def get_lecturer_by_academic_id(self, academic_id: str):
+        lecturer = await self.collection.find_one({"academicId": academic_id})
+        if not lecturer:
+            raise HTTPException(status_code=404, detail="Lecturer not found")
+        return lecturer
+
     async def create_lecturer(self, lecturer_data: dict):
         lecturer_data["createdAt"] = datetime.now()
         lecturer_data["updatedAt"] = datetime.now()

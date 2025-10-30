@@ -30,6 +30,15 @@ async def get_lecturer(
     return await controller.get_lecturer_by_id(id)
 
 
+@router.get("/lecturers/by-academic-id/{academic_id}", response_model=LecturerPublic)
+async def get_lecturer_by_academic_id(
+    academic_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    controller = LecturerController(db)
+    return await controller.get_lecturer_by_academic_id(academic_id)
+
+
 @router.post("/lecturers", response_model=LecturerPublic)
 async def create_lecturer(
     lecturer: LecturerCreate,
