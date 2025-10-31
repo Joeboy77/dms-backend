@@ -138,9 +138,11 @@ class GroupController:
                 student_name = f"{student.get('surname', '')} {student.get('otherNames', '')}".strip()
                 students.append({
                     "student_id": str(student["_id"]),
+                    "student_academicId": student.get("academicId", ""),
                     "student_name": student_name,
                     "student_email": student.get("email", ""),
-                    "student_image": student.get("image", "")
+                    "student_image": student.get("image", ""),
+                    "student_programme": student.get("program", "")
                 })
 
         return {

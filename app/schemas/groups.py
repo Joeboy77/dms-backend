@@ -33,8 +33,12 @@ class GroupPublic(Obj):
     description: str | None = None
     student_ids: list[PyObjectId] = []
     student_count: int = 0
-    created_at: datetime = Field(validation_alias="createdAt")
-    updated_at: datetime = Field(validation_alias="updatedAt")
+    created_at: datetime = Field(alias="createdAt")
+    updated_at: datetime = Field(alias="updatedAt")
+    
+    class Config:
+        populate_by_name = True
+        from_attributes = True
 
 
 class GroupWithStudents(BaseModel):

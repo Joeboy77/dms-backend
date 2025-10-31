@@ -10,7 +10,7 @@ class Page(BaseModel):
 
 
 class AcademicYearCreate(BaseModel):
-    title: str
+    year: str
     createdBy: PyObjectId
     terms: int = 2
     status: str = "INACTIVE"
@@ -19,7 +19,7 @@ class AcademicYearCreate(BaseModel):
 
 
 class AcademicYearUpdate(BaseModel):
-    title: str | None = None
+    year: str | None = None
     terms: int | None = None
     status: str | None = None
     currentTerm: int | None = None
@@ -27,7 +27,7 @@ class AcademicYearUpdate(BaseModel):
 
 
 class AcademicYearPublic(Obj):
-    title: str
+    year: str
     createdBy: PyObjectId
     createdAt: datetime = Field(validation_alias="createdAt")
     updatedAt: datetime = Field(validation_alias="updatedAt")

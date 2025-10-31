@@ -172,7 +172,7 @@ class LecturerProjectAreaController:
         }
 
     async def get_detailed_by_academic_year(self, academic_year_id: str):
-        lpas = await self.collection.find({"academicYear": ObjectId(academic_year_id)}).to_list(None)
+        lpas = await self.collection.find({"academicYear": academic_year_id}).to_list(None)
 
         detailed_lpas = []
         for lpa in lpas:
@@ -180,7 +180,7 @@ class LecturerProjectAreaController:
             lecturer = await self.db["lecturers"].find_one({"_id": lpa["lecturer"]})
 
             # Get academic year details
-            academic_year = await self.db["academic_years"].find_one({"_id": lpa["academicYear"]})
+            academic_year = await self.db["academic_years"].find_one({"year": lpa["academicYear"]})
 
             # Get project areas details
             project_areas = []
@@ -200,16 +200,16 @@ class LecturerProjectAreaController:
                 "id": str(lpa["_id"]),
                 "lecturer": {
                     "lecturer_id": str(lecturer["_id"]) if lecturer else None,
-                    "name": lecturer.get("name", "") if lecturer else None,
+                    "name": f"{lecturer.get("surname", "")} {lecturer.get("otherNames", "")}" if lecturer else None,
                     "email": lecturer.get("email", "") if lecturer else None,
                     "phone": lecturer.get("phone", "") if lecturer else None,
-                    "department": lecturer.get("department", "") if lecturer else None,
+                    "department": lecturer.get("department", "Computer Science") if lecturer else None,
                     "title": lecturer.get("title", "") if lecturer else None,
                     "specialization": lecturer.get("specialization", "") if lecturer else None
                 } if lecturer else None,
                 "academic_year": {
                     "academic_year_id": str(academic_year["_id"]) if academic_year else None,
-                    "title": academic_year.get("title", "") if academic_year else None,
+                    "year": academic_year.get("year", "") if academic_year else None,
                     "status": academic_year.get("status", "") if academic_year else None,
                     "terms": academic_year.get("terms", 0) if academic_year else None,
                     "current_term": academic_year.get("currentTerm", 0) if academic_year else None

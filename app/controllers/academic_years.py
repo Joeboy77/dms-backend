@@ -38,13 +38,13 @@ class AcademicYearController:
         academic_year_data["createdAt"] = datetime.now()
         academic_year_data["updatedAt"] = datetime.now()
 
-        # Check if title already exists
+        # Check if year already exists
         existing = await self.collection.find_one({
-            "title": academic_year_data["title"],
+            "year": academic_year_data["year"],
             "deleted": {"$ne": True}
         })
         if existing:
-            raise HTTPException(status_code=400, detail="Academic year title already exists")
+            raise HTTPException(status_code=400, detail="Academic year already exists")
 
         result = await self.collection.insert_one(academic_year_data)
         created_academic_year = await self.collection.find_one({"_id": result.inserted_id})
