@@ -32,12 +32,18 @@ class SubmissionUpdate(BaseModel):
 
 class SubmissionPublic(Obj):
     deliverable_id: PyObjectId
-    group_id: PyObjectId
+    group_id: PyObjectId | None = None
+    student_id: PyObjectId | None = None
     comments: str | None = None
     status: SubmissionStatus = SubmissionStatus.IN_PROGRESS
     file_count: int = 0
-    submitted_at: datetime = Field(validation_alias="createdAt")
-    updated_at: datetime | None = Field(default=None, validation_alias="updatedAt")
+    submitted_at: datetime = Field(alias="createdAt")
+    createdAt: datetime = Field(alias="created_at")
+    updatedAt: datetime = Field(alias="updated_at")
+    
+    class Config:
+        populate_by_name = True
+        from_attributes = True
 
 
 class GroupSubmissionInfo(BaseModel):
