@@ -100,6 +100,12 @@ class LecturerController:
             raise HTTPException(status_code=404, detail="Lecturer not found")
         return lecturer
 
+    async def get_lecturer_by_academic_id(self, academic_id: str):
+        lecturer = await self.collection.find_one({"academicId": academic_id})
+        if not lecturer:
+            raise HTTPException(status_code=404, detail="Lecturer not found")
+        return lecturer
+
     async def create_lecturer(self, lecturer_data: dict):
         lecturer_data["createdAt"] = datetime.now()
         lecturer_data["updatedAt"] = datetime.now()
@@ -133,11 +139,37 @@ class LecturerController:
         return created_lecturer
 
 
-    async def update_lecturer(self, lecturer_id: str, update_data: dict):
+    async def update_lecturer(self, lecturer_id: str, update_data: dict, current_pin: str | None = None):
         update_data = {k: v for k, v in update_data.items() if v is not None}
 
         if not update_data:
             raise HTTPException(status_code=400, detail="No valid fields to update")
+
+        # If PIN is being updated, verify current PIN first
+        if "pin" in update_data:
+            if not current_pin:
+                raise HTTPException(status_code=400, detail="Current PIN is required to change PIN")
+            
+            # Get current lecturer to verify PIN
+            lecturer = await self.collection.find_one({"_id": ObjectId(lecturer_id)})
+            if not lecturer:
+                raise HTTPException(status_code=404, detail="Lecturer not found")
+            
+            stored_pin = lecturer.get("pin", "")
+            
+            # Verify current PIN
+            from app.core.authentication.hashing import hash_verify
+            try:
+                is_valid = hash_verify(current_pin, stored_pin)
+            except Exception:
+                # Fallback to plain text comparison
+                is_valid = current_pin == stored_pin
+            
+            if not is_valid:
+                raise HTTPException(status_code=400, detail="Current PIN is incorrect")
+            
+            # Hash the new PIN
+            update_data["pin"] = get_hash(update_data["pin"])
 
         update_data["updatedAt"] = datetime.now()
 

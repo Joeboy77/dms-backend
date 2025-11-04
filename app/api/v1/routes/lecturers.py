@@ -30,6 +30,15 @@ async def get_lecturer(
     return await controller.get_lecturer_by_id(id)
 
 
+@router.get("/lecturers/by-academic-id/{academic_id}", response_model=LecturerPublic)
+async def get_lecturer_by_academic_id(
+    academic_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    controller = LecturerController(db)
+    return await controller.get_lecturer_by_academic_id(academic_id)
+
+
 @router.post("/lecturers", response_model=LecturerPublic)
 async def create_lecturer(
     lecturer: LecturerCreate,
@@ -50,7 +59,8 @@ async def update_lecturer(
 ):
     controller = LecturerController(db)
     update_data = lecturer.model_dump()
-    return await controller.update_lecturer(id, update_data)
+    current_pin = update_data.pop("current_pin", None)  # Extract current_pin from update_data
+    return await controller.update_lecturer(id, update_data, current_pin)
 
 
 @router.delete("/lecturers/{id}", status_code=204)

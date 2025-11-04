@@ -5,6 +5,7 @@ from app.api.v1.routes import (
     auth,
     # logins,
     activity_logs,
+    announcements,
     coordinator_stats,
     coordinator_project_areas,
     coordinator_logs,
@@ -86,6 +87,7 @@ app.include_router(supervisor_reminders.router, prefix=settings.API_V1_STR)
 app.include_router(supervisor_students.router, prefix=settings.API_V1_STR)
 app.include_router(supervisor_deliverables.router, prefix=settings.API_V1_STR)
 app.include_router(supervisor_submissions.router, prefix=settings.API_V1_STR)
+app.include_router(announcements.router, prefix=settings.API_V1_STR)
 app.include_router(websocket_chat.router, prefix=settings.API_V1_STR)
 
 
