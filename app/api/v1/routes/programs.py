@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from typing import List
 
 from app.core.authentication.auth_middleware import get_current_token
 from app.core.database import get_db
@@ -74,6 +75,15 @@ async def search_programs_by_title(
     return await controller.search_programs_by_title(title)
 
 
+@router.get("/students-dashboard", response_model=list[StudentDashboardResponse])
+async def get_all_student_dashboard(
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(get_current_token),
+):
+    controller = ProgramController(db)
+    return await controller.get_all_student_dashboard()
+
+
 @router.get("/students/{student_id}/dashboard", response_model=StudentDashboardResponse)
 async def get_student_dashboard(
     student_id: str,
@@ -82,3 +92,5 @@ async def get_student_dashboard(
 ):
     controller = ProgramController(db)
     return await controller.get_student_dashboard(student_id)
+
+

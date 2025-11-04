@@ -1,25 +1,32 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Any
+from pydantic import BaseModel, Field, ConfigDict
 
-from bson import ObjectId
-from pydantic import BaseModel, Field
+# ✅ Actor information (if needed)
+class ActorInfo(BaseModel):
+    id: str
+    name: str
+    role: str  # e.g. "admin", "supervisor", "student"
 
-from app.schemas.base import Obj, PyObjectId
-
-
-class Page(BaseModel):
-    items: list["ActivityPublic"]
-    next_cursor: str | None = None
-
-
+# ✅ Flexible details structure
 class Detail(BaseModel):
-    status: int
-    message: str
-    requestType: str
+    # status: Optional[int] = None
+    # message: Optional[str] = None
+    # requestType: Optional[str] = None
+    model_config = ConfigDict(extra="allow")
 
+    # class Config:
+    #     # Allow any extra fields that exist in MongoDB documents
+    #     extra = "allow"
 
-class ActivityPublic(Obj):
+# ✅ Activity public schema
+class ActivityPublic(BaseModel):
     action: str
-    details: Detail
+    details: Optional[Detail]
     createdAt: datetime = Field(validation_alias="createdAt")
-    updatedAt: datetime | None = Field(default=None, validation_alias="updatedAt")
+    updatedAt: Optional[datetime] = Field(default=None, validation_alias="updatedAt")
+
+# ✅ Paginated response model
+class Page(BaseModel):
+    items: list[ActivityPublic]
+    next_cursor: Optional[str] = None

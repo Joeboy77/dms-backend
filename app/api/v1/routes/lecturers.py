@@ -59,7 +59,8 @@ async def update_lecturer(
 ):
     controller = LecturerController(db)
     update_data = lecturer.model_dump()
-    return await controller.update_lecturer(id, update_data)
+    current_pin = update_data.pop("current_pin", None)  # Extract current_pin from update_data
+    return await controller.update_lecturer(id, update_data, current_pin)
 
 
 @router.delete("/lecturers/{id}", status_code=204)

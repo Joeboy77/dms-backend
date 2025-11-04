@@ -40,4 +40,4 @@ class ProjectAreaWithLecturers(BaseModel):
 
 class AllProjectAreasWithLecturers(BaseModel):
     project_areas: list[ProjectAreaPublic]
-    lecturers: list[dict] = []
+    # lecturers: list[dict] = []

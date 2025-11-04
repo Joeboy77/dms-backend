@@ -37,6 +37,8 @@ class LecturerUpdate(BaseModel):
     position: str | None = None
     email: str | None = None
     phone: str | None = None
+    pin: str | None = None
+    current_pin: str | None = None  # Required when updating PIN
     bio: str | None = None
     officeHours: str | None = None
     officeLocation: str | None = None
