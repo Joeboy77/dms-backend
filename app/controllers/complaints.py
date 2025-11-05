@@ -51,6 +51,12 @@ class ComplaintController:
         # Generate reference number if not provided
         if not complaint_data.get("reference"):
             complaint_data["reference"] = self.generate_reference_number()
+        
+        # Set performed_at for actions if present
+        if "actions" in complaint_data and isinstance(complaint_data["actions"], list):
+            for action in complaint_data["actions"]:
+                if isinstance(action, dict) and action.get("performed_at") is None:
+                    action["performed_at"] = datetime.now()
 
         result = await self.collection.insert_one(complaint_data)
         created_complaint = await self.collection.find_one({"_id": result.inserted_id})
