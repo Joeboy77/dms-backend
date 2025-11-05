@@ -47,45 +47,85 @@ class DeliverableController:
 
         return convert_objectid_to_str(deliverable)
 
+
     async def create_deliverable(self, deliverable_data: dict):
-        # Convert supervisor_id to ObjectId if it's a string
-        if "supervisor_id" in deliverable_data and isinstance(deliverable_data["supervisor_id"], str):
-            deliverable_data["supervisor_id"] = ObjectId(deliverable_data["supervisor_id"])
+        # Find supervisor in supervisors collection and get associated lecturer
+        if "supervisor_id" in deliverable_data:
+            try:
+                supervisor_id = (
+                    ObjectId(deliverable_data["supervisor_id"])
+                    if isinstance(deliverable_data["supervisor_id"], str)
+                    else deliverable_data["supervisor_id"]
+                )
+                
+                # Find supervisor and their associated lecturer
+                supervisor = await self.db["supervisors"].find_one({"_id": ObjectId(supervisor_id)})
+                if not supervisor:
+                    raise HTTPException(status_code=404, detail="Supervisor not found")
+                
+                # Get lecturer details - this is the actual supervisor_id we'll store
+                lecturer = await self.db["lecturers"].find_one({"_id": supervisor["lecturer_id"]})
+                if not lecturer:
+                    raise HTTPException(status_code=404, detail="Associated lecturer not found")
+
+                # Store supervisor._id as supervisor_id in deliverable
+                deliverable_data["supervisor_id"] = supervisor["_id"]
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Invalid supervisor_id format or not found: {str(e)}")
 
         # Auto-populate student_ids if not provided
         if not deliverable_data.get("student_ids"):
             supervisor_id = deliverable_data["supervisor_id"]
 
-            # Get all FYPs for this supervisor to find their students (same logic as students controller)
-            fyps = await self.db["fyps"].find({"supervisor": supervisor_id}).to_list(None)
+            # Get all FYPs for this supervisor
+            fyps = await self.db["fyps"].find({
+                "$or": [
+                    {"supervisor": supervisor_id},
+                    {"supervisor": str(supervisor_id)}
+                ]
+            }).to_list(None)
+            
+            print(f"Found {len(fyps)} FYPs for supervisor {supervisor_id}")
 
-            # Only include students that actually exist in the students collection
+            # Only include students that actually exist
             student_ids = []
             for fyp in fyps:
                 if fyp.get("student"):
-                    # Verify the student still exists
-                    student = await self.db["students"].find_one({"_id": fyp["student"]})
+                    # Verify student exists
+                    student = await self.db["students"].find_one({
+                        "$or": [
+                            {"_id": ObjectId(fyp["student"])},
+                            {"_id": fyp["student"]}
+                        ]
+                    })
                     if student:
-                        student_ids.append(fyp["student"])
+                        student_ids.append(student["_id"])
 
             deliverable_data["student_ids"] = student_ids
         else:
-            # Convert student_ids to ObjectIds if they're strings
+            # Convert student_ids to ObjectIds
             student_ids = []
             for student_id in deliverable_data["student_ids"]:
-                if isinstance(student_id, str):
-                    student_ids.append(ObjectId(student_id))
-                else:
-                    student_ids.append(student_id)
+                try:
+                    student_ids.append(
+                        ObjectId(student_id)
+                        if isinstance(student_id, str)
+                        else student_id
+                    )
+                except Exception:
+                    continue
             deliverable_data["student_ids"] = student_ids
 
+        # Add timestamps and initialize submissions count
         deliverable_data["createdAt"] = datetime.now()
         deliverable_data["updatedAt"] = datetime.now()
         deliverable_data["total_submissions"] = 0
 
+        # Insert and return
         result = await self.collection.insert_one(deliverable_data)
         created_deliverable = await self.collection.find_one({"_id": result.inserted_id})
         created_deliverable["total_submissions"] = 0
+        
         return convert_objectid_to_str(created_deliverable)
 
     async def update_deliverable(self, deliverable_id: str, update_data: dict):
@@ -186,46 +226,79 @@ class DeliverableController:
         return deliverables
 
     async def get_deliverables_by_student_id(self, student_id: str):
-        """Get all deliverables for a specific student by finding their supervisor first"""
-        # First find the student by academicId
+        """Get all deliverables for a specific student"""
+        # Find student by academicId
         student = await self.db["students"].find_one({"academicId": student_id})
         if not student:
             raise HTTPException(status_code=404, detail=f"Student {student_id} not found")
 
-        # Find the most recent FYP assignment for this student to get supervisor
+        # Find the most recent FYP assignment for this student
+        student_id_query = {
+            "$or": [
+                {"student": student["_id"]},  # try ObjectId
+                {"student": str(student["_id"])}  # try string
+            ]
+        }
+        
         fyp = await self.db["fyps"].find_one(
-            {"student": student["_id"]},
-            sort=[("createdAt", -1)]  # Get most recent assignment
+            student_id_query,
+            sort=[("createdAt", -1)]
         )
-        if not fyp or not fyp.get("supervisor"):
-            raise HTTPException(status_code=404, detail=f"No supervisor assigned to student {student_id}")
+        
+        if not fyp:
+            raise HTTPException(status_code=404, detail=f"No FYP found for student {student_id}")
 
-        supervisor_id = fyp["supervisor"]
+        # Get supervisor details - handle both ObjectId and string storage
+        supervisor = None
+        if fyp.get("supervisor"):
+            try:
+                # Try as ObjectId
+                supervisor = await self.db["supervisors"].find_one({"_id": ObjectId(fyp["supervisor"])})
+            except:
+                # Try as string
+                supervisor = await self.db["supervisors"].find_one({"_id": fyp["supervisor"]})
+                
+        lecturer = await self.db["lecturers"].find_one({"_id": supervisor["lecturer_id"]}) if fyp.get("supervisor") else None
 
-        # Get all deliverables for this supervisor where this student is in the student_ids list
-        deliverables = await self.collection.find({
-            "supervisor_id": supervisor_id,
-            "student_ids": student["_id"]
-        }).sort("start_date", -1).to_list(None)
+        # Get deliverables where:
+        # 1. supervisor matches FYP supervisor
+        # 2. student_ids contains this student's id (as either ObjectId or string)
+        deliverables_query = {
+            "$or": [
+                # {"supervisor_id": fyp["supervisor"]},
+                # {"supervisor_id": str(fyp["supervisor"])}
+                {"supervisor_id": lecturer["_id"]} if lecturer else None
+            ],
+            "student_ids": {
+                "$in": [student["_id"], str(student["_id"])]
+            }
+        }
 
-        # Calculate total submissions for each deliverable
+        deliverables = await self.collection.find(deliverables_query).sort("start_date", -1).to_list(None)
+
+        # Enrich deliverables with submission info
         for deliverable in deliverables:
+            # Get total submissions count
             submissions_count = await self.db["submissions"].count_documents(
                 {"deliverable_id": deliverable["_id"]}
             )
             deliverable["total_submissions"] = submissions_count
 
-            # Check if this specific student has submitted for this deliverable
+            # Check this student's submission
             student_submission = await self.db["submissions"].find_one({
                 "deliverable_id": deliverable["_id"],
-                "student_id": student["_id"]
+                "$or": [
+                    {"student_id": student["_id"]},
+                    {"student_id": str(student["_id"])}
+                ]
             })
+            
             deliverable["student_submitted"] = student_submission is not None
             if student_submission:
                 deliverable["student_submission_date"] = student_submission.get("submitted_at")
                 deliverable["student_submission_id"] = str(student_submission["_id"])
 
-        # Get student details for response
+        # Format response
         student_info = {
             "student_id": str(student["_id"]),
             "academic_id": student.get("academicId", ""),
@@ -233,15 +306,16 @@ class DeliverableController:
             "email": student.get("email", "")
         }
 
-        # Get supervisor details
-        supervisor = await self.db["lecturers"].find_one({"_id": supervisor_id})
         supervisor_info = {}
         if supervisor:
             supervisor_info = {
+                "lecturer_id": str(lecturer["_id"]) if lecturer else "",
                 "supervisor_id": str(supervisor["_id"]),
-                "academic_id": supervisor.get("academicId", ""),
-                "name": f"{supervisor.get('surname', '')} {supervisor.get('otherNames', '')}".strip(),
-                "email": supervisor.get("email", "")
+                "academic_id": lecturer.get("academicId", ""),
+                "name": f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip(),
+                "email": lecturer.get("email", ""),
+                "position": lecturer.get("position", ""),
+                "department": lecturer.get("department", "Computer Science")
             }
 
         return {

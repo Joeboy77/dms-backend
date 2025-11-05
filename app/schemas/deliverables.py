@@ -16,7 +16,7 @@ class DeliverableCreate(BaseModel):
     supervisor_id: PyObjectId
     instructions: str | None = None
     file_path: str | None = None
-    student_ids: list[PyObjectId] | None = None  # Optional, auto-populated if not provided
+    # student_ids: list[PyObjectId] | None = None  # Optional, auto-populated if not provided
 
 
 class DeliverableUpdate(BaseModel):
