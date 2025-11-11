@@ -24,18 +24,13 @@ async def get_student_statistics(
     try:
         total_students = await db["students"].count_documents({})
         
-        assigned_students = await db["students"].count_documents({
+        
+        assigned_students = await db["fyps"].count_documents({
             "supervisor": {"$exists": True, "$ne": None}
         })
-        
-        unassigned_students = await db["students"].count_documents({
-            "$or": [
-                {"supervisor": {"$exists": False}},
-                {"supervisor": None},
-                {"supervisor": ""}
-            ]
-        })
-        
+
+        unassigned_students = total_students - assigned_students
+
         return {
             "total_students": total_students,
             "assigned_students": assigned_students,

@@ -267,7 +267,7 @@ class DeliverableController:
             "$or": [
                 # {"supervisor_id": fyp["supervisor"]},
                 # {"supervisor_id": str(fyp["supervisor"])}
-                {"supervisor_id": lecturer["_id"]} if lecturer else None
+                {"supervisor_id": supervisor["_id"]} if lecturer else None
             ],
             "student_ids": {
                 "$in": [student["_id"], str(student["_id"])]
@@ -275,6 +275,7 @@ class DeliverableController:
         }
 
         deliverables = await self.collection.find(deliverables_query).sort("start_date", -1).to_list(None)
+        print(deliverables)
 
         # Enrich deliverables with submission info
         for deliverable in deliverables:
@@ -312,6 +313,7 @@ class DeliverableController:
                 "lecturer_id": str(lecturer["_id"]) if lecturer else "",
                 "supervisor_id": str(supervisor["_id"]),
                 "academic_id": lecturer.get("academicId", ""),
+                "title": lecturer.get("title", ""),
                 "name": f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip(),
                 "email": lecturer.get("email", ""),
                 "position": lecturer.get("position", ""),
