@@ -11,22 +11,55 @@ class LecturerController:
         self.collection = db["lecturers"]
         
         
-    async def _get_or_create_project_area(self, title: str) -> ObjectId:
+    async def _get_or_create_project_area(self, title: str, lecturer_id: ObjectId | None = None) -> ObjectId:
         title = (title or "").strip()
         if not title:
             raise ValueError("empty project area title")
         pa = await self.db["project_areas"].find_one({"title": title})
-        if pa:
-            return pa["_id"]
         now = datetime.utcnow()
+        if pa:
+            # add lecturer to interested_staff if provided
+            if lecturer_id:
+                await self.db["project_areas"].update_one(
+                    {"_id": pa["_id"]},
+                    {"$addToSet": {"interested_staff": lecturer_id}, "$set": {"updatedAt": now}}
+                )
+            return pa["_id"]
+        # create new project area and record interested staff if provided
         res = await self.db["project_areas"].insert_one({
             "title": title,
             "description": "",
             "image": None,
+            "interested_staff": [lecturer_id] if lecturer_id else [],
             "createdAt": now,
             "updatedAt": now
         })
         return res.inserted_id
+    
+    
+    async def _sync_project_area_interested_staff(self, lecturer_id: ObjectId, new_pa_ids: list[ObjectId], old_pa_ids: list[ObjectId] | None = None):
+        """
+        Ensure project_areas.interested_staff reflects lecturer membership:
+         - add lecturer_id to any project areas in new_pa_ids
+         - remove lecturer_id from any project areas in old_pa_ids that are not in new_pa_ids
+        """
+        new_set = {str(x) for x in (new_pa_ids or [])}
+        old_set = {str(x) for x in (old_pa_ids or [])}
+
+        to_add = [ObjectId(x) for x in new_set - old_set]
+        to_remove = [ObjectId(x) for x in old_set - new_set]
+
+        now = datetime.utcnow()
+        for pa_oid in to_add:
+            await self.db["project_areas"].update_one(
+                {"_id": pa_oid},
+                {"$addToSet": {"interested_staff": lecturer_id}, "$set": {"updatedAt": now}}
+            )
+        for pa_oid in to_remove:
+            await self.db["project_areas"].update_one(
+                {"_id": pa_oid},
+                {"$pull": {"interested_staff": lecturer_id}, "$set": {"updatedAt": now}}
+            )
     
     
     async def _normalize_project_areas_field(self, data: dict):
@@ -49,7 +82,7 @@ class LecturerController:
                 continue
             except Exception:
                 pass
-            # treat as title -> create/lookup
+            # treat as title -> create/lookup (no lecturer id here)
             pa_id = await self._get_or_create_project_area(str(item))
             new_ids.append(pa_id)
 
@@ -92,8 +125,6 @@ class LecturerController:
         
         
 
-    
-
     async def get_lecturer_by_id(self, lecturer_id: str):
         lecturer = await self.collection.find_one({"_id": ObjectId(lecturer_id)})
         if not lecturer:
@@ -106,11 +137,12 @@ class LecturerController:
             raise HTTPException(status_code=404, detail="Lecturer not found")
         return lecturer
 
+
     async def create_lecturer(self, lecturer_data: dict):
         lecturer_data["createdAt"] = datetime.now()
         lecturer_data["updatedAt"] = datetime.now()
 
-        # Normalize project areas if present
+        # Normalize project areas if present (convert titles -> ids; does NOT set interested_staff yet)
         if "projectAreas" in lecturer_data:
             await self._normalize_project_areas_field(lecturer_data)
 
@@ -124,15 +156,17 @@ class LecturerController:
                     detail="A Project Coordinator already exists. Only one coordinator is allowed."
                 )
 
-        # Default all lecturers to supervisors
-        # if not position:
-        #     lecturer_data["position"] = "supervisor"
-
-        # Insert the new lecturer
         result = await self.collection.insert_one(lecturer_data)
         created_lecturer = await self.collection.find_one({"_id": result.inserted_id})
 
-        # Resolve project area names if present
+        try:
+            raw_pa_ids = created_lecturer.get("projectAreas") or []
+            await self._sync_project_area_interested_staff(created_lecturer["_id"], raw_pa_ids, old_pa_ids=[])
+        except Exception:
+            # don't fail creation on sync error
+            pass
+
+        # Resolve project area names for API response (after sync)
         if "projectAreas" in created_lecturer:
             created_lecturer["projectAreas"] = await self._resolve_project_area_titles(created_lecturer)
 
@@ -155,21 +189,6 @@ class LecturerController:
             if not lecturer:
                 raise HTTPException(status_code=404, detail="Lecturer not found")
             
-            stored_pin = lecturer.get("pin", "")
-            
-            # Verify current PIN
-            from app.core.authentication.hashing import hash_verify
-            try:
-                is_valid = hash_verify(current_pin, stored_pin)
-            except Exception:
-                # Fallback to plain text comparison
-                is_valid = current_pin == stored_pin
-            
-            if not is_valid:
-                raise HTTPException(status_code=400, detail="Current PIN is incorrect")
-            
-            # Hash the new PIN
-            update_data["pin"] = get_hash(update_data["pin"])
 
         update_data["updatedAt"] = datetime.now()
 

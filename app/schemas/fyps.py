@@ -26,13 +26,13 @@ class FypUpdate(BaseModel):
 
 
 class FypPublic(Obj):
-    student: PyObjectId
-    projectArea: PyObjectId
-    checkin: PyObjectId
-    supervisor: PyObjectId | None = None
+    student: PyObjectId | str
+    projectArea: PyObjectId | str
+    checkin: PyObjectId | str
+    supervisor: PyObjectId | str | None = None
     createdAt: datetime = Field(validation_alias="createdAt")
     updatedAt: datetime = Field(validation_alias="updatedAt")
-    
+
     
 class FypPublicWithProjectArea(Obj):
     student: PyObjectId
