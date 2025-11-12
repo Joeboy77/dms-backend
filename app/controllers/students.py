@@ -245,6 +245,10 @@ class StudentController:
         lecturer = await self.db["lecturers"].find_one({"_id": ObjectId(supervisor["lecturer_id"])})
         if not lecturer:
             raise HTTPException(status_code=404, detail="Lecturer for supervisor not found")
+        
+        project_area = await self.db["lecturer_project_areas"].find_one({"lecturer": lecturer["_id"]})
+        if not project_area:
+            raise HTTPException(status_code=404, detail="Project area for lecturer not found")
 
         created_assignments = []
         assignment_errors = []
@@ -272,7 +276,7 @@ class StudentController:
                     "student": student["_id"],
                     "checkin": checkin_id,
                     "supervisor": ObjectId(supervisor_id),
-                    "projectArea": None,
+                    "projectArea": project_area["projectAreas"],
                     "createdAt": datetime.utcnow(),
                     "updatedAt": datetime.utcnow()
                 }

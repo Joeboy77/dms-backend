@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.schemas.activity_logs import Page
@@ -20,7 +20,7 @@ async def get_all_logs(
 ):
     try:
         controller = ActivityLogController(db)
-        result = await controller.get_all_logs(limit=limit, cursor=cursor)
+        result = await controller.get_logs(limit=limit, cursor=cursor)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching activity logs: {str(e)}")

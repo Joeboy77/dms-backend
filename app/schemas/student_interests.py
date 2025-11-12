@@ -18,6 +18,18 @@ class Page(BaseModel):
     next_cursor: str | None = None
 
 
+class PreferenceOption(BaseModel):
+    option: int
+    supervisor_id: str
+    project_area_id: str
+
+class StudentPreferenceSchema(BaseModel):
+    student_id: PyObjectId | str
+    academic_year_id: PyObjectId | str
+    preferences: list[PreferenceOption]
+    project_topic: str
+
+
 class StudentInterestCreate(BaseModel):
     student: PyObjectId
     academicYear: PyObjectId
@@ -53,6 +65,7 @@ class StudentInterestPublic(Obj):
     # academicId: str
     academicYear: PyObjectId
     projectAreas: List[ProjectAreaPublic]
+    supervisor: Optional[List[PyObjectId]] = None
     preference_rank: int = 0
     interest_level: InterestLevel = InterestLevel.MEDIUM
     notes: str = ""
@@ -65,7 +78,6 @@ class StudentInterestWithDetails(BaseModel):
     student_details: dict
     project_area_details: List[dict]
     academic_year_details: dict
-
 
 class StudentPreferenceUpdate(BaseModel):
     project_area_id: PyObjectId

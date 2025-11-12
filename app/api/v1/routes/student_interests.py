@@ -1,6 +1,8 @@
+from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from typing import List
+from datetime import datetime
 
 from app.core.authentication.auth_middleware import get_current_token
 from app.core.database import get_db
@@ -14,12 +16,28 @@ from app.schemas.student_interests import (
     StudentSupervisorMatches,
     InterestStatistics,
     BulkImportResult,
-    StudentInterestAnalytics
+    StudentInterestAnalytics,
+    StudentPreferenceSchema
 )
 from app.schemas.token import TokenData
 from app.controllers.student_interests import StudentInterestController
 
 router = APIRouter(tags=["Student Interests"])
+
+
+@router.post("/preferences")
+async def submit_preferences(data: StudentPreferenceSchema, db: AsyncIOMotorDatabase = Depends(get_db)):
+    existing = await db["student_preferences"].find_one({
+        "student_id": data.student_id,
+        "academic_year_id": data.academic_year_id
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="Preferences already submitted")
+
+    doc = data.model_dump()
+    doc["createdAt"] = datetime.utcnow()
+    await db["student_preferences"].insert_one(doc)
+    return {"message": "Preferences submitted successfully"}
 
 
 @router.get("/student-interests", response_model=Page)
