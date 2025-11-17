@@ -453,3 +453,15 @@ class StudentController:
             "items": detailed_students,
             "next_cursor": next_cursor
         }
+
+
+    async def get_student_dashboard_data(student_id):
+        
+        return {
+            "student_id": student_id,
+            "dashboard_data": {
+                "recent_activities": [],
+                "notifications": [],
+                "assigned_projects": []
+            }
+        }

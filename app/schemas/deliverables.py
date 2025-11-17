@@ -2,7 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from app.schemas.base import Obj, PyObjectId
-
+from app.schemas.submissions import SubmissionPublic
 
 class Page(BaseModel):
     items: list["DeliverablePublic"]
@@ -36,7 +36,9 @@ class DeliverablePublic(Obj):
     supervisor_id: PyObjectId
     instructions: str | None = None
     file_path: str | None = None
-    student_ids: list[PyObjectId] = []
+    # student_ids: list[PyObjectId] = []
+    group_id: list[PyObjectId] | None = None
+    submissions: list[SubmissionPublic] | None = None
     total_submissions: int = 0
     created_at: datetime | None = Field(default=None, validation_alias="createdAt")
     updated_at: datetime | None = Field(default=None, validation_alias="updatedAt")

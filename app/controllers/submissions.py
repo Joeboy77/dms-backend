@@ -3,11 +3,19 @@ from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException
 
+import os
+import shutil
+from fastapi import UploadFile
+from datetime import datetime
 
+UPLOAD_DIR = "uploads/submissions"
+MAX_FILE_SIZE_MB = 10
+MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024  # 10MB
 class SubmissionController:
     def __init__(self, db: AsyncIOMotorDatabase):
         self.db = db
         self.collection = db["submissions"]
+        self.submission_files_collection = db["submission_files"]
 
     async def get_all_submissions(self, limit: int = 10, cursor: str | None = None):
         query = {}
@@ -40,6 +48,7 @@ class SubmissionController:
 
         submission_data["createdAt"] = datetime.now()
         submission_data["updatedAt"] = datetime.now()
+        submission_data["attempt_number"] = 1
 
         # Check if student already submitted for this deliverable
         existing_submission = await self.collection.find_one({
@@ -51,8 +60,99 @@ class SubmissionController:
 
         result = await self.collection.insert_one(submission_data)
         created_submission = await self.collection.find_one({"_id": result.inserted_id})
-        return created_submission
+        return {"data": created_submission, "message": "Project submitted successfully"}
+    
+    
+    async def review_submission(self, submission_id: str, approved: bool, feedback: str = None):
+        submission = await self.get_submission_by_id(submission_id)
+        
+        if approved:
+            submission.status = "approved"
+            submission.lecturer_feedback = feedback
+            submission.updatedAt = datetime.now()
+            await self.collection.replace_one({"_id": ObjectId(submission_id)}, submission)
+        else:
+            submission.status = "changes_requested"
+            submission.lecturer_feedback = feedback
+            submission.updatedAt = datetime.now()
+            await self.collection.replace_one({"_id": ObjectId(submission_id)}, submission)
+            
+        
+        return {"data": submission, "message": "Submission reviewed successfully"}
+    
+    
+    async def save_new_file(submission_id: str, file: UploadFile) -> dict:
+        """
+        Saves file locally, enforces size limit, returns metadata.
+        """
 
+        # ---------------- SIZE CHECK ----------------
+        file.file.seek(0, os.SEEK_END)   # Move cursor to end of file
+        file_size = file.file.tell()
+        file.file.seek(0)                # Reset cursor to beginning
+
+        if file_size > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large. Max size is {MAX_FILE_SIZE_MB}MB"
+            )
+
+        # ---------------- FOLDER SETUP ----------------
+        submission_folder = os.path.join(UPLOAD_DIR, str(submission_id))
+        os.makedirs(submission_folder, exist_ok=True)
+
+        # ---------------- FILENAME ----------------
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        ext = os.path.splitext(file.filename)[1]
+        new_filename = f"{timestamp}{ext}"
+        file_path = os.path.join(submission_folder, new_filename)
+
+        # ---------------- SAVE FILE ----------------
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        # ---------------- METADATA ----------------
+        file_data = {
+            "submission_id": submission_id,
+            "file_name": new_filename,
+            "file_path": file_path,
+            "file_type": file.content_type,
+            "file_size": file_size,
+        }
+
+        return file_data
+    
+        
+    async def resubmit_submission(self, submission_id: str, file: UploadFile):
+        submission = await self.get_submission_by_id(submission_id)
+
+        if submission.status != "changes_requested":
+            raise HTTPException(status_code=400, detail="Submission is not eligible for resubmission")
+        
+
+        # Save file and get metadata
+        file_data = await self.save_new_file(submission_id, file)
+
+        # Insert into SubmissionFile collection
+        await self.submission_files_collection.insert_one(file_data)
+
+        # Update submission
+        await self.collection.update_one(
+            {"_id": ObjectId(submission_id)},
+            {
+                "$set": {
+                    "status": "PENDING_REVIEW",
+                    "lecturer_feedback": None
+                },
+                "$inc": {
+                    "attempt_number": 1
+                }
+            }
+        )
+
+        return {"message": "Resubmission successful"}
+
+        
     async def update_submission(self, submission_id: str, update_data: dict):
         update_data = {k: v for k, v in update_data.items() if v is not None}
 
@@ -72,6 +172,7 @@ class SubmissionController:
         updated_submission = await self.collection.find_one({"_id": ObjectId(submission_id)})
         return updated_submission
 
+
     async def delete_submission(self, submission_id: str):
         result = await self.collection.delete_one({"_id": ObjectId(submission_id)})
 
@@ -85,6 +186,7 @@ class SubmissionController:
             {"deliverable_id": ObjectId(deliverable_id)}
         ).sort("createdAt", -1).to_list(None)
         return submissions
+
 
     async def get_submissions_by_student(self, student_id: str):
         submissions = await self.collection.find(

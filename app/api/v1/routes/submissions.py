@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, responses
+from fastapi import APIRouter, Depends, HTTPException, Query, responses, UploadFile
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token
@@ -39,6 +39,29 @@ async def create_submission(
     controller = SubmissionController(db)
     submission_data = submission.model_dump()
     return await controller.create_submission(submission_data)
+
+
+@router.post("/submissions/review/{submission_id}", response_model=SubmissionPublic)
+async def review_submission(
+    submission_id: str,
+    approved: bool,
+    feedback: str | None = None,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    # current_user: TokenData = Depends(get_current_token),
+):
+    controller = SubmissionController(db)
+    return await controller.review_submission(submission_id, approved, feedback)
+
+
+@router.post("/submissions/resubmit/{submission_id}", response_model=SubmissionPublic)
+async def resubmit_submission(
+    submission_id: str,
+    file: UploadFile,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    # current_user: TokenData = Depends(get_current_token),
+):
+    controller = SubmissionController(db)
+    return await controller.resubmit_submission(submission_id, file)
 
 
 @router.patch("/submissions/{id}", response_model=SubmissionPublic)

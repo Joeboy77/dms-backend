@@ -6,6 +6,7 @@ from app.schemas.base import Obj, PyObjectId
 
 
 class FileStatus(str, Enum):
+    IN_PROGRESS = "in_progress"
     PENDING_REVIEW = "pending_review"
     CHANGES_REQUESTED = "changes_requested"
     APPROVED = "approved"

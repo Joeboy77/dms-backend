@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token
 from app.core.database import get_db
-from app.schemas.fyps import FypCreate, FypPublic, FypPublicWithProjectArea, FypUpdate, Page
+from app.schemas.fyps import FypCreate, FypPublic, FypPublicWithProjectArea, FypUpdate, Page, FypDashboard
 from app.schemas.token import TokenData
 from app.controllers.fyps import FypController
 
@@ -102,3 +102,18 @@ async def get_fyps_by_checkin(
 ):
     controller = FypController(db)
     return await controller.get_fyps_by_checkin(checkin_id)
+
+
+@router.get("/fyps/dashboard/{student_id}", response_model=FypDashboard)
+async def get_fyp_dashboard(
+    student_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    # current_user: TokenData = Depends(get_current_token),
+):
+    """
+    Get comprehensive dashboard data for a student's FYP.
+    Returns aggregated data including supervisor info, project area, progress stages,
+    deliverables, calendar events, and reminders.
+    """
+    controller = FypController(db)
+    return await controller.get_dashboard_by_student(student_id)
