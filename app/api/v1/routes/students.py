@@ -167,4 +167,4 @@ async def get_student_dashboard_data(
     # current_user: TokenData = Depends(get_current_token),
 ):
     controller = StudentController(db)
-    return await controller.get_student_dashboard_data(student_id)
+    return await controller.get_student_dashboard(student_id)

@@ -40,28 +40,55 @@ class SubmissionController:
         return submission
 
     async def create_submission(self, submission_data: dict):
-        # Convert IDs to ObjectId if they're strings
+        # ----------------------------------------------------
+        # 1. Convert IDs to ObjectId
+        # ----------------------------------------------------
         if "deliverable_id" in submission_data and isinstance(submission_data["deliverable_id"], str):
             submission_data["deliverable_id"] = ObjectId(submission_data["deliverable_id"])
+
         if "group_id" in submission_data and isinstance(submission_data["group_id"], str):
             submission_data["group_id"] = ObjectId(submission_data["group_id"])
 
-        submission_data["createdAt"] = datetime.now()
-        submission_data["updatedAt"] = datetime.now()
-        submission_data["attempt_number"] = 1
+        if "project_id" in submission_data and isinstance(submission_data["project_id"], str):
+            submission_data["project_id"] = ObjectId(submission_data["project_id"])
 
-        # Check if student already submitted for this deliverable
+        # ----------------------------------------------------
+        # 2. Prevent duplicate submissions from the same group
+        # ----------------------------------------------------
         existing_submission = await self.collection.find_one({
             "deliverable_id": submission_data["deliverable_id"],
             "group_id": submission_data["group_id"]
         })
-        if existing_submission:
-            raise HTTPException(status_code=400, detail="Group has already submitted for this deliverable")
 
+        if existing_submission:
+            raise HTTPException(
+                status_code=400,
+                detail="This group has already submitted for this deliverable"
+            )
+
+        # ----------------------------------------------------
+        # 3. Setup timestamps
+        # ----------------------------------------------------
+        now = datetime.utcnow()
+
+        submission_data["submitted_at"] = now
+        submission_data["created_at"] = now
+        submission_data["updated_at"] = now
+
+        # Group submissions do not use attempt_number
+        submission_data["file_count"] = submission_data.get("file_count", 0)
+
+        # ----------------------------------------------------
+        # 4. Insert submission
+        # ----------------------------------------------------
         result = await self.collection.insert_one(submission_data)
+
         created_submission = await self.collection.find_one({"_id": result.inserted_id})
-        return {"data": created_submission, "message": "Project submitted successfully"}
-    
+
+        return {
+            "data": created_submission,
+            "message": "Submission created successfully"
+        }
     
     async def review_submission(self, submission_id: str, approved: bool, feedback: str = None):
         submission = await self.get_submission_by_id(submission_id)

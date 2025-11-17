@@ -11,13 +11,13 @@ class Page(BaseModel):
 
 class GroupCreate(BaseModel):
     name: str
-    description: str | None = None
-    student_ids: list[PyObjectId] = []
+    project_title: str | None = None
+    students: list[PyObjectId] = []
 
 
 class GroupUpdate(BaseModel):
     name: str | None = None
-    description: str | None = None
+    project_title: str | None = None
 
 
 class GroupAddStudent(BaseModel):
@@ -30,9 +30,10 @@ class GroupRemoveStudent(BaseModel):
 
 class GroupPublic(Obj):
     name: str
-    description: str | None = None
-    student_ids: list[PyObjectId] = []
-    student_count: int = 0
+    project_title: str | None = None
+    supervisor: str | None = None
+    students: list[PyObjectId] = []
+    student_count: int
     created_at: datetime = Field(alias="createdAt")
     updated_at: datetime = Field(alias="updatedAt")
     
@@ -44,3 +45,13 @@ class GroupPublic(Obj):
 class GroupWithStudents(BaseModel):
     group: GroupPublic
     students: list[dict] = []  # Will contain student details
+    
+    
+class GroupAssignmentRequest(BaseModel):
+    group_ids: list[str]  # Accept group IDs as strings
+    academic_year_id: str
+    supervisor_id: PyObjectId
+    
+class GroupAssignmentResponse(BaseModel):
+    assigned_groups: list[str] = []
+    assignment_errors: list[str] = []
