@@ -101,4 +101,4 @@ async def get_deliverables_for_student(
 ):
     """Get all deliverables for a specific student by their academic ID"""
     controller = DeliverableController(db)
-    return await controller.get_deliverables_by_student_id(student_id)
+    return await controller.get_deliverables_for_student(student_id)

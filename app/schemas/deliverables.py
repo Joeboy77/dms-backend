@@ -16,7 +16,7 @@ class DeliverableCreate(BaseModel):
     supervisor_id: PyObjectId
     instructions: str | None = None
     file_path: str | None = None
-    # student_ids: list[PyObjectId] | None = None  # Optional, auto-populated if not provided
+    # group_ids: list[PyObjectId] | None = None  # Optional, auto-populated if not provided
 
 
 class DeliverableUpdate(BaseModel):
@@ -26,7 +26,7 @@ class DeliverableUpdate(BaseModel):
     supervisor_id: PyObjectId | None = None
     instructions: str | None = None
     file_path: str | None = None
-    student_ids: list[PyObjectId] | None = None
+    group_ids: list[PyObjectId] | None = None
 
 
 class DeliverablePublic(Obj):
@@ -37,7 +37,7 @@ class DeliverablePublic(Obj):
     instructions: str | None = None
     file_path: str | None = None
     # student_ids: list[PyObjectId] = []
-    group_id: list[PyObjectId] | None = None
+    group_ids: list[PyObjectId] | None = None
     submissions: list[SubmissionPublic] | None = None
     total_submissions: int = 0
     created_at: datetime | None = Field(default=None, validation_alias="createdAt")

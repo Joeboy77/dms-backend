@@ -455,7 +455,7 @@ class StudentController:
         }
 
 
-    async def get_student_dashboard_data(student_id):
+    async def get_student_dashboard(self, student_id):
         
         return {
             "student_id": student_id,

@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token, RoleBasedAccessControl
 from app.core.database import get_db
-from app.schemas.groups import GroupCreate, GroupPublic, GroupUpdate, Page, GroupAddStudent, GroupRemoveStudent, GroupWithStudents
+from app.schemas.groups import GroupAssignmentRequest, GroupCreate, GroupPublic, GroupUpdate, Page, GroupAddStudent, GroupRemoveStudent, GroupWithStudents
 from app.schemas.token import TokenData
 from app.controllers.groups import GroupController
 
@@ -105,3 +105,21 @@ async def get_groups_by_student(
 ):
     controller = GroupController(db)
     return await controller.get_groups_by_student(student_id)
+
+
+@router.post("/groups/assign-to-supervisor")
+async def assign_groups_to_supervisor(
+    assignment_request: GroupAssignmentRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    # current_user: TokenData = Depends(get_current_token),
+):
+    controller = GroupController(db)
+    group_ids = assignment_request.group_ids  # Already strings (academic IDs)
+    academic_year_id = str(assignment_request.academic_year_id)
+    supervisor_id = str(assignment_request.supervisor_id)
+
+    return await controller.assign_groups_to_supervisor(
+        group_ids=group_ids,
+        academic_year_id=academic_year_id,
+        supervisor_id=supervisor_id
+    )
