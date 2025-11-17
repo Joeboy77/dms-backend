@@ -140,3 +140,31 @@ async def assign_students_to_supervisor(
         academic_year_id=academic_year_id,
         supervisor_id=supervisor_id
     )
+
+
+@router.post("/students/remove-supervisor")
+async def remove_supervisor_from_students(
+    assignment_request: StudentAssignmentRequest,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_coordinator)
+):
+    controller = StudentController(db)
+    student_ids = assignment_request.student_ids  # Already strings (academic IDs)
+    academic_year_id = str(assignment_request.academic_year_id)
+    supervisor_id = str(assignment_request.supervisor_id)
+
+    return await controller.remove_supervisor_from_students(
+        student_ids=student_ids,
+        academic_year_id=academic_year_id,
+        supervisor_id=supervisor_id
+    )
+    
+
+@router.get("/dashboard/{student_id}")
+async def get_student_dashboard_data(
+    student_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    # current_user: TokenData = Depends(get_current_token),
+):
+    controller = StudentController(db)
+    return await controller.get_student_dashboard_data(student_id)

@@ -21,12 +21,13 @@ class Page(BaseModel):
 class SubmissionCreate(BaseModel):
     deliverable_id: PyObjectId
     group_id: PyObjectId
-    comments: str | None = None
+    lecturer_feedback: str | None = None
+    attempt_number: int
     status: SubmissionStatus = SubmissionStatus.IN_PROGRESS
 
 
 class SubmissionUpdate(BaseModel):
-    comments: str | None = None
+    lecturer_feedback: str | None = None
     status: SubmissionStatus | None = None
 
 
@@ -34,8 +35,9 @@ class SubmissionPublic(Obj):
     deliverable_id: PyObjectId
     group_id: PyObjectId | None = None
     student_id: PyObjectId | None = None
-    comments: str | None = None
+    lecturer_feedback: str | None = None
     status: SubmissionStatus = SubmissionStatus.IN_PROGRESS
+    attempt_number: int
     file_count: int = 0
     submitted_at: datetime = Field(alias="createdAt")
     createdAt: datetime = Field(alias="created_at")
