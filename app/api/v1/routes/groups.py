@@ -115,11 +115,19 @@ async def assign_groups_to_supervisor(
 ):
     controller = GroupController(db)
     group_ids = assignment_request.group_ids  # Already strings (academic IDs)
-    academic_year_id = str(assignment_request.academic_year_id)
     supervisor_id = str(assignment_request.supervisor_id)
 
     return await controller.assign_groups_to_supervisor(
         group_ids=group_ids,
-        academic_year_id=academic_year_id,
         supervisor_id=supervisor_id
     )
+    
+    
+@router.post("/groups/unassign-from-supervisor/{supervisor_id}")
+async def unassign_groups_from_supervisor(
+    supervisor_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    # current_user: TokenData = Depends(get_current_token),
+):
+    controller = GroupController(db)
+    return await controller.unassign_groups_from_supervisor(supervisor_id=supervisor_id)

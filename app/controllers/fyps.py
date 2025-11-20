@@ -5,6 +5,12 @@ from fastapi import HTTPException
 
 
 class FypController:
+    """
+    Controller for managing Final Year Projects (FYPs).
+    
+    FYPs are associated with groups of students and include project areas,
+    supervisors, checkins, and deliverables tracking.
+    """
     def __init__(self, db: AsyncIOMotorDatabase):
         self.db = db
         self.collection = db["fyps"]
@@ -50,53 +56,48 @@ class FypController:
         fyp_data["createdAt"] = datetime.utcnow()
         fyp_data["updatedAt"] = datetime.utcnow()
 
-        # Normalize student field - handle both ObjectId and string
-        student_field = fyp_data.get("student")
-        if student_field:
-            # If it's a string, try to find student by academicId first, then by ObjectId
-            if isinstance(student_field, str):
-                student = await self.db["students"].find_one({"academicId": student_field})
-                if not student and ObjectId.is_valid(student_field):
-                    student = await self.db["students"].find_one({"_id": ObjectId(student_field)})
-                if not student:
-                    raise HTTPException(status_code=404, detail=f"Student {student_field} not found")
-                fyp_data["student"] = student["_id"]
-            elif isinstance(student_field, ObjectId):
-                # Verify student exists
-                student = await self.db["students"].find_one({"_id": student_field})
-                if not student:
-                    raise HTTPException(status_code=404, detail=f"Student with ID {student_field} not found")
-            # If it's already an ObjectId, keep it as is
+        # Normalize group field - handle both ObjectId and string
+        group_field = fyp_data.get("group")
+        if not group_field:
+            raise HTTPException(status_code=400, detail="Group is required")
+        
+        # If it's a string, try to find group by name first, then by ObjectId
+        if isinstance(group_field, str):
+            if ObjectId.is_valid(group_field):
+                group = await self.db["groups"].find_one({"_id": ObjectId(group_field)})
+                if not group:
+                    raise HTTPException(status_code=404, detail=f"Group with ID {group_field} not found")
+                fyp_data["group"] = group["_id"]
+            else:
+                # Try to find by name
+                group = await self.db["groups"].find_one({"name": group_field})
+                if not group:
+                    raise HTTPException(status_code=404, detail=f"Group with name '{group_field}' not found")
+                fyp_data["group"] = group["_id"]
+        elif isinstance(group_field, ObjectId):
+            # Verify group exists
+            group = await self.db["groups"].find_one({"_id": group_field})
+            if not group:
+                raise HTTPException(status_code=404, detail=f"Group with ID {group_field} not found")
 
-        # Check if student already has an FYP - handle both ObjectId and string forms
-        student_oid = fyp_data.get("student")
-        if student_oid:
+        # Check if group already has an FYP - handle both ObjectId and string forms
+        group_oid = fyp_data.get("group")
+        if group_oid:
             existing_fyp = await self.collection.find_one(
                 {
                     "$or": [
-                        {"student": student_oid},
-                        {"student": str(student_oid)}
+                        {"group": group_oid},
+                        {"group": str(group_oid)}
                     ]
                 }
             )
             if existing_fyp:
-                raise HTTPException(status_code=400, detail="Student already has an FYP assigned")
+                raise HTTPException(status_code=400, detail="Group already has an FYP assigned")
 
-        # Normalize supervisor field if present
-        supervisor_field = fyp_data.get("supervisor")
-        if supervisor_field and isinstance(supervisor_field, str):
-            # Try to find lecturer by academicId first
-            lecturer = await self.db["lecturers"].find_one({"academicId": supervisor_field})
-            if not lecturer and ObjectId.is_valid(supervisor_field):
-                lecturer = await self.db["lecturers"].find_one({"_id": ObjectId(supervisor_field)})
-            if not lecturer:
-                raise HTTPException(status_code=404, detail=f"Supervisor {supervisor_field} not found")
-            fyp_data["supervisor"] = lecturer["_id"]
-        elif supervisor_field and isinstance(supervisor_field, ObjectId):
-            # Verify supervisor exists
-            lecturer = await self.db["lecturers"].find_one({"_id": supervisor_field})
-            if not lecturer:
-                raise HTTPException(status_code=404, detail=f"Supervisor with ID {supervisor_field} not found")
+        group = await self.db["groups"].find_one({"_id": group_oid})
+        if not group:
+            raise HTTPException(status_code=404, detail=f"Group with ID {group_oid} not found")
+        fyp_data["supervisor"] = group.get("supervisor")
 
         # Normalize projectArea field if present
         project_area_field = fyp_data.get("projectArea")
@@ -131,34 +132,39 @@ class FypController:
         if not update_data:
             raise HTTPException(status_code=400, detail="No valid fields to update")
 
-        # Normalize student field if being updated
-        if "student" in update_data:
-            student_field = update_data["student"]
-            if isinstance(student_field, str):
-                student = await self.db["students"].find_one({"academicId": student_field})
-                if not student and ObjectId.is_valid(student_field):
-                    student = await self.db["students"].find_one({"_id": ObjectId(student_field)})
-                if not student:
-                    raise HTTPException(status_code=404, detail=f"Student {student_field} not found")
-                update_data["student"] = student["_id"]
-            elif isinstance(student_field, ObjectId):
-                student = await self.db["students"].find_one({"_id": student_field})
-                if not student:
-                    raise HTTPException(status_code=404, detail=f"Student with ID {student_field} not found")
+        # Normalize group field if being updated
+        if "group" in update_data:
+            group_field = update_data["group"]
+            if isinstance(group_field, str):
+                if ObjectId.is_valid(group_field):
+                    group = await self.db["groups"].find_one({"_id": ObjectId(group_field)})
+                    if not group:
+                        raise HTTPException(status_code=404, detail=f"Group with ID {group_field} not found")
+                    update_data["group"] = group["_id"]
+                else:
+                    # Try to find by name
+                    group = await self.db["groups"].find_one({"name": group_field})
+                    if not group:
+                        raise HTTPException(status_code=404, detail=f"Group with name '{group_field}' not found")
+                    update_data["group"] = group["_id"]
+            elif isinstance(group_field, ObjectId):
+                group = await self.db["groups"].find_one({"_id": group_field})
+                if not group:
+                    raise HTTPException(status_code=404, detail=f"Group with ID {group_field} not found")
 
-            # Check if another FYP already exists for this student (excluding current FYP)
-            student_oid = update_data["student"]
+            # Check if another FYP already exists for this group (excluding current FYP)
+            group_oid = update_data["group"]
             existing_fyp = await self.collection.find_one(
                 {
                     "_id": {"$ne": fyp_oid},
                     "$or": [
-                        {"student": student_oid},
-                        {"student": str(student_oid)}
+                        {"group": group_oid},
+                        {"group": str(group_oid)}
                     ]
                 }
             )
             if existing_fyp:
-                raise HTTPException(status_code=400, detail="Student already has an FYP assigned")
+                raise HTTPException(status_code=400, detail="Group already has an FYP assigned")
 
         # Normalize supervisor field if being updated
         if "supervisor" in update_data:
@@ -218,7 +224,50 @@ class FypController:
 
         return {"message": "FYP deleted successfully"}
 
+    async def get_fyps_by_group(self, group_id: str):
+        # Accept either group name or a Mongo ObjectId string
+        if ObjectId.is_valid(group_id):
+            group = await self.db["groups"].find_one({"_id": ObjectId(group_id)})
+        else:
+            # Try to find by name
+            group = await self.db["groups"].find_one({"name": group_id})
+        
+        if not group:
+            raise HTTPException(status_code=404, detail=f"Group {group_id} not found")
+
+        # There should be at most one FYP per group; pick most recent if multiple
+        # Handle both storage forms: ObjectId and stringified ObjectId
+        group_oid = group["_id"]
+        fyp = await self.collection.find_one(
+            {
+                "$or": [
+                    {"group": group_oid},
+                    {"group": str(group_oid)}
+                ]
+            },
+            sort=[("createdAt", -1)]
+        )
+        if not fyp:
+            raise HTTPException(status_code=404, detail=f"No FYP found for group {group_id}")
+
+        # Populate single projectArea document in place of ObjectId
+        project_area_id = fyp.get("projectArea")
+        if project_area_id:
+            if isinstance(project_area_id, str) and ObjectId.is_valid(project_area_id):
+                project_area_id = ObjectId(project_area_id)
+            project_area_doc = await self.project_areas_collection.find_one({"_id": project_area_id})
+            if project_area_doc:
+                fyp["projectArea"] = project_area_doc
+
+        return fyp
+
     async def get_fyps_by_student(self, student_id: str):
+        """
+        Get Final Year Project (FYP) for a student by finding their group first.
+        
+        This method looks up the student's group and then retrieves the FYP
+        associated with that group.
+        """
         # Accept either academicId (e.g., CS2025001) or a Mongo ObjectId string
         student = await self.db["students"].find_one({"academicId": student_id})
         if not student and ObjectId.is_valid(student_id):
@@ -226,20 +275,31 @@ class FypController:
         if not student:
             raise HTTPException(status_code=404, detail=f"Student {student_id} not found")
 
-        # There should be at most one FYP per student; pick most recent if multiple
-        # Handle both storage forms: ObjectId and stringified ObjectId
         student_oid = student["_id"]
+
+        # Find group(s) the student belongs to
+        groups = await self.db["groups"].find({
+            "students": {"$in": [student_oid, str(student_oid)]}
+        }).to_list(None)
+
+        if not groups:
+            raise HTTPException(status_code=404, detail=f"Student {student_id} is not in any group")
+
+        # Use the first group (assuming one student can only be in one active group)
+        group_oid = groups[0]["_id"]
+
+        # Get FYP for the group
         fyp = await self.collection.find_one(
             {
                 "$or": [
-                    {"student": student_oid},
-                    {"student": str(student_oid)}
+                    {"group": group_oid},
+                    {"group": str(group_oid)}
                 ]
             },
             sort=[("createdAt", -1)]
         )
         if not fyp:
-            raise HTTPException(status_code=404, detail=f"No FYP found for student {student_id}")
+            raise HTTPException(status_code=404, detail=f"No FYP found for student {student_id}'s group")
 
         # Populate single projectArea document in place of ObjectId
         project_area_id = fyp.get("projectArea")
@@ -253,21 +313,64 @@ class FypController:
         return fyp
 
     async def get_fyps_by_supervisor(self, supervisor_id: str):
-        fyps = await self.collection.find({"supervisor": ObjectId(supervisor_id)}).to_list(None)
+        try:
+            supervisor_oid = self._validate_object_id(supervisor_id, "Supervisor ID")
+        except HTTPException:
+            # Try to find supervisor by academicId (lecturer)
+            lecturer = await self.db["lecturers"].find_one({"academicId": supervisor_id})
+            if not lecturer:
+                raise HTTPException(status_code=404, detail=f"Supervisor {supervisor_id} not found")
+            # Find supervisor linked to lecturer
+            supervisor = await self.db["supervisors"].find_one({"lecturer_id": lecturer["_id"]})
+            if not supervisor:
+                raise HTTPException(status_code=404, detail=f"Supervisor not found for lecturer {supervisor_id}")
+            supervisor_oid = supervisor["_id"]
+        
+        # Handle both ObjectId and string forms
+        fyps = await self.collection.find({
+            "$or": [
+                {"supervisor": supervisor_oid},
+                {"supervisor": str(supervisor_oid)}
+            ]
+        }).to_list(None)
         return fyps
 
     async def get_fyps_by_project_area(self, project_area_id: str):
-        fyps = await self.collection.find({"projectArea": ObjectId(project_area_id)}).to_list(None)
+        try:
+            project_area_oid = self._validate_object_id(project_area_id, "Project Area ID")
+        except HTTPException:
+            raise
+
+        # Handle both ObjectId and string forms
+        fyps = await self.collection.find({
+            "$or": [
+                {"projectArea": project_area_oid},
+                {"projectArea": str(project_area_oid)}
+            ]
+        }).to_list(None)
         return fyps
 
     async def get_fyps_by_checkin(self, checkin_id: str):
-        fyps = await self.collection.find({"checkin": ObjectId(checkin_id)}).to_list(None)
+        try:
+            checkin_oid = self._validate_object_id(checkin_id, "Checkin ID")
+        except HTTPException:
+            raise
+
+        # Handle both ObjectId and string forms
+        fyps = await self.collection.find({
+            "$or": [
+                {"checkin": checkin_oid},
+                {"checkin": str(checkin_oid)}
+            ]
+        }).to_list(None)
         return fyps
 
     async def get_dashboard_by_student(self, student_id: str):
         """
-        Get comprehensive dashboard data for a student's FYP.
+        Get comprehensive dashboard data for a student's Final Year Project (FYP).
+        
         Aggregates data from FYP, deliverables, submissions, reminders, and related collections.
+        Returns supervisor info, project area details, progress stages, deadlines, and calendar events.
         """
         from datetime import datetime
         from app.controllers.deliverables import DeliverableController
@@ -278,10 +381,39 @@ class FypController:
         if not fyp:
             raise HTTPException(status_code=404, detail=f"No FYP found for student {student_id}")
 
-        # Step 2: Get student details
-        student_oid = fyp.get("student")
-        if isinstance(student_oid, str) and ObjectId.is_valid(student_oid):
-            student_oid = ObjectId(student_oid)
+        # Step 2: Get group details and find student
+        group_oid = fyp.get("group")
+        if isinstance(group_oid, str) and ObjectId.is_valid(group_oid):
+            group_oid = ObjectId(group_oid)
+        elif not isinstance(group_oid, ObjectId):
+            raise HTTPException(status_code=404, detail="FYP group not found")
+        
+        group = await self.db["groups"].find_one({"_id": group_oid})
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found")
+
+        # Find the student in the group
+        student_oid = None
+        if ObjectId.is_valid(student_id):
+            student_oid = ObjectId(student_id)
+        else:
+            # Find student by academicId
+            student = await self.db["students"].find_one({"academicId": student_id})
+            if not student:
+                raise HTTPException(status_code=404, detail="Student not found")
+            student_oid = student["_id"]
+        
+        # Verify student is in the group - handle both ObjectId and string forms
+        group_students = group.get("students", [])
+        student_in_group = any(
+            s == student_oid or (isinstance(s, ObjectId) and s == student_oid) or 
+            (isinstance(s, str) and ObjectId.is_valid(s) and ObjectId(s) == student_oid) or
+            str(s) == str(student_oid)
+            for s in group_students
+        )
+        if not student_in_group:
+            raise HTTPException(status_code=404, detail="Student is not in this FYP's group")
+        
         student = await self.db["students"].find_one({"_id": student_oid})
         if not student:
             raise HTTPException(status_code=404, detail="Student not found")
@@ -344,9 +476,9 @@ class FypController:
                         "topic": fyp.get("topic")  # Topic might be stored in FYP
                     }
 
-        # Step 5: Get deliverables for student
+        # Step 5: Get deliverables for student (this method handles group lookup internally)
         deliverable_controller = DeliverableController(self.db)
-        deliverables_data = await deliverable_controller.get_deliverables_by_student_id(
+        deliverables_data = await deliverable_controller.get_deliverables_for_student(
             student.get("academicId") or str(student["_id"])
         )
         deliverables = deliverables_data.get("deliverables", [])

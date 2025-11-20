@@ -30,15 +30,26 @@ async def get_deliverable(
     return await controller.get_deliverable_by_id(id)
 
 
-@router.post("/deliverables", response_model=DeliverablePublic)
+@router.post("/deliverables/{supervisor_id}", response_model=DeliverablePublic)
 async def create_deliverable(
+    supervisor_id: str,
     deliverable: DeliverableCreate,
     db: AsyncIOMotorDatabase = Depends(get_db),
     # current_user: TokenData = Depends(get_current_token),
 ):
+    """
+    Create a deliverable for a supervisor.
+    
+    The supervisor_id can be either:
+    - A supervisor ObjectId
+    - A lecturer's academicId (will be resolved to supervisor)
+    
+    If group_ids are not provided, they will be auto-populated from all groups
+    associated with the supervisor's FYPs.
+    """
     controller = DeliverableController(db)
     deliverable_data = deliverable.model_dump()
-    return await controller.create_deliverable(deliverable_data)
+    return await controller.create_deliverable(supervisor_id, deliverable_data)
 
 
 @router.patch("/deliverables/{id}", response_model=DeliverablePublic)

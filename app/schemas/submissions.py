@@ -20,9 +20,10 @@ class Page(BaseModel):
 
 class SubmissionCreate(BaseModel):
     deliverable_id: PyObjectId
+    project_id: PyObjectId      # NEW: needed for clean grouping
     group_id: PyObjectId
+    attempt_number: int = 1     # default first attempt
     lecturer_feedback: str | None = None
-    attempt_number: int
     status: SubmissionStatus = SubmissionStatus.IN_PROGRESS
 
 
@@ -33,16 +34,19 @@ class SubmissionUpdate(BaseModel):
 
 class SubmissionPublic(Obj):
     deliverable_id: PyObjectId
-    group_id: PyObjectId | None = None
-    student_id: PyObjectId | None = None
+    project_id: PyObjectId
+    group_id: PyObjectId
+
     lecturer_feedback: str | None = None
     status: SubmissionStatus = SubmissionStatus.IN_PROGRESS
     attempt_number: int
     file_count: int = 0
-    submitted_at: datetime = Field(alias="createdAt")
-    createdAt: datetime = Field(alias="created_at")
-    updatedAt: datetime = Field(alias="updated_at")
-    
+
+    submitted_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+
     class Config:
         populate_by_name = True
         from_attributes = True

@@ -8,6 +8,8 @@ import shutil
 from fastapi import UploadFile
 from datetime import datetime
 
+from app.schemas.submissions import SubmissionPublic, SubmissionStatus
+
 UPLOAD_DIR = "uploads/submissions"
 MAX_FILE_SIZE_MB = 10
 MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024  # 10MB
@@ -38,6 +40,7 @@ class SubmissionController:
         if not submission:
             raise HTTPException(status_code=404, detail="Submission not found")
         return submission
+
 
     async def create_submission(self, submission_data: dict):
         # ----------------------------------------------------
@@ -85,10 +88,67 @@ class SubmissionController:
 
         created_submission = await self.collection.find_one({"_id": result.inserted_id})
 
-        return {
-            "data": created_submission,
-            "message": "Submission created successfully"
+        # return {
+        #     "data": created_submission,
+        #     "message": "Submission created successfully"
+        # }
+        
+        return created_submission
+    
+    
+    async def upload_file(self, submission_id: str, file: UploadFile, uploaded_by: str) -> SubmissionPublic:
+        # 1. Verify submission exists
+        submission = await self.collection.find_one({"_id": ObjectId(submission_id)})
+        if not submission:
+            raise HTTPException(status_code=404, detail="Submission not found")
+
+        group_id = submission["group_id"]
+
+        # 2. Verify uploader belongs to the group
+        group = await self.db["groups"].find_one({"_id": ObjectId(group_id)})
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found")
+        
+        uploaded_by = ObjectId(uploaded_by)
+        if uploaded_by not in group["students"]:
+            raise HTTPException(status_code=403, detail="Uploader is not a member of this group")
+
+        # 3. Save file
+        file_data = await self.save_new_file(submission_id, file)
+
+        # 4. Insert file metadata
+        file_data_doc = {
+            **file_data,
+            "uploaded_by": uploaded_by,
+            "createdAt": datetime.utcnow(),
+            "submission_id": ObjectId(submission_id)
         }
+        await self.submission_files_collection.insert_one(file_data_doc)
+
+        # 5. Increment file count
+        await self.collection.update_one({"_id": ObjectId(submission_id)}, {"$inc": {"file_count": 1}})
+        
+        number_of_files = await self.submission_files_collection.count_documents({"submission_id": ObjectId(submission_id)})
+
+        # 6. Build SubmissionPublic object
+        submission_public = SubmissionPublic(
+            _id=submission["_id"],
+            deliverable_id=submission["deliverable_id"],
+            project_id=submission["project_id"],
+            group_id=submission["group_id"],
+            lecturer_feedback=submission.get("lecturer_feedback"),
+            status=submission.get("status", SubmissionStatus.IN_PROGRESS),
+            attempt_number=submission.get("attempt_number", 1) + 1,
+            file_count=number_of_files,  # incremented
+            submitted_at=submission.get("submitted_at", datetime.utcnow()),
+            created_at=submission.get("created_at", datetime.utcnow()),
+            updated_at=datetime.utcnow()
+        )
+
+        return submission_public
+
+
+    
     
     async def review_submission(self, submission_id: str, approved: bool, feedback: str = None):
         submission = await self.get_submission_by_id(submission_id)
@@ -108,7 +168,7 @@ class SubmissionController:
         return {"data": submission, "message": "Submission reviewed successfully"}
     
     
-    async def save_new_file(submission_id: str, file: UploadFile) -> dict:
+    async def save_new_file(self, submission_id: str, file: UploadFile) -> dict:
         """
         Saves file locally, enforces size limit, returns metadata.
         """
