@@ -151,121 +151,76 @@ class GroupController:
             "students": students
         }
 
-    async def get_groups_by_student(self, student_id: str):
-        
-        student = await self.db["students"].find({"academicId": student_id}).to_list(None)
-        groups = await self.collection.find(
-            {"students": student[0]["_id"]}
-        ).to_list(None)
 
-        for group in groups:
-            group["student_count"] = len(group.get("students", []))
-        return groups
-    
-    
-    async def assign_groups_to_supervisor(self, group_ids: list[str], academic_year_id: str, supervisor_id: str):
-        # Get the checkin record
-        checkin = await self.db["fypcheckins"].find_one({"academicYear": academic_year_id})
-        if not checkin:
-            raise HTTPException(status_code=404, detail="FYP checkin not found for the academic year")
-
-        checkin_id = checkin["_id"]
-
-        # Fetch supervisor and linked lecturer
+    async def assign_groups_to_supervisor(self, group_ids: list[str], supervisor_id: str):
+    # Verify supervisor
         supervisor = await self.db["supervisors"].find_one({"_id": ObjectId(supervisor_id)})
         if not supervisor:
             raise HTTPException(status_code=404, detail="Supervisor not found")
 
+        # Fetch lecturer linked to supervisor
         lecturer = await self.db["lecturers"].find_one({"_id": ObjectId(supervisor["lecturer_id"])})
         if not lecturer:
             raise HTTPException(status_code=404, detail="Lecturer for supervisor not found")
-        
-        project_area = await self.db["lecturer_project_areas"].find_one({"lecturer": lecturer["_id"]})
-        if not project_area:
-            raise HTTPException(status_code=404, detail="Project area for lecturer not found")
 
-        created_assignments = []
-        assignment_errors = []
+        successful = []
+        errors = []
 
-        # Assign students
         for group_id in group_ids:
             try:
                 # Verify group exists
                 group = await self.collection.find_one({"_id": ObjectId(group_id)})
                 if not group:
-                    assignment_errors.append(f"{group['name']} not found")
+                    errors.append(f"Group with ID {group_id} not found")
                     continue
-                
 
                 # Check if already assigned
-                existing_fyp = await self.db["fyps"].find_one({
-                    "group": group["_id"],
-                    "checkin": checkin_id
-                })
-                if existing_fyp:
-                    assignment_errors.append(f"Group {group['name']} already assigned to a supervisor for this academic year")
+                if "supervisor" in group and group["supervisor"]:
+                    errors.append(f"Group {group['name']} already has a supervisor assigned")
                     continue
-                
-                # Update the group's supervisor field
+
+                # Assign supervisor directly to group
                 await self.collection.update_one(
                     {"_id": group["_id"]},
                     {"$set": {"supervisor": supervisor_id}}
                 )
 
-
-                # Create assignment
-                fyp_data = {
-                    "group": group["_id"],
-                    "checkin": checkin_id,
-                    "supervisor": ObjectId(supervisor_id),
-                    "projectArea": project_area["projectAreas"],
-                    "createdAt": datetime.utcnow(),
-                    "updatedAt": datetime.utcnow()
-                }
-
-                result = await self.db["fyps"].insert_one(fyp_data)
-                created_fyp = await self.db["fyps"].find_one({"_id": result.inserted_id})
-
-                created_assignments.append({
-                    "fyp_id": str(created_fyp["_id"]),
-                    "group_id": str(created_fyp["group"]),
-                    "supervisor_id": str(created_fyp["supervisor"]),
-                    "checkin_id": str(created_fyp["checkin"]),
-                    "project_area_id": str(created_fyp["projectArea"]) if created_fyp["projectArea"] else None,
-                    "created_at": created_fyp["createdAt"],
-                    "updated_at": created_fyp["updatedAt"]
+                successful.append({
+                    "group_id": group_id,
+                    "group_name": group["name"],
+                    "assigned_supervisor": supervisor_id
                 })
 
             except Exception as e:
-                assignment_errors.append(f"Error assigning group {group_id}: {str(e)}")
+                errors.append(f"Error assigning group {group_id}: {str(e)}")
 
-        # Log activity after all assignments
-        if created_assignments:
+        # Log activity (Optional but recommended)
+        if successful:
             try:
                 await self.db["activity_logs"].insert_one({
-                    "description": f"Assigned {len(created_assignments)} student(s) to Supervisor {lecturer.get('title', '')} {lecturer.get('surname', '')} {lecturer.get('otherNames', '')}.",
-                    "action": "student_assignment",
-                    "user_name": lecturer.get("academicId"),
+                    "description": f"Assigned {len(successful)} group(s) to Supervisor {lecturer.get('surname', '')} {lecturer.get('otherNames', '')}.",
+                    "action": "group_assignment",
                     "user_id": str(supervisor["_id"]),
-                    "type": "assignment",
                     "timestamp": datetime.utcnow(),
-                    "createdAt": datetime.utcnow(),
-                    "updatedAt": datetime.utcnow(),
                     "details": {
-                        "student_count": len(created_assignments),
-                        "supervisor_name": f"{lecturer.get('title', '')} {lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip(),
-                        "project_area": None,
-                        "assigned_groups": group_ids
+                        "groups_assigned": successful
                     }
                 })
             except Exception as log_error:
-                print("Failed to log activity:", log_error)
+                print("Logging failed:", log_error)
 
-        # Return response
         return {
-            "message": "Assignment process completed",
-            "successful_assignments": len(created_assignments),
-            "failed_assignments": len(assignment_errors),
-            "created_assignments": created_assignments,
-            "errors": assignment_errors
+            "message": "Group assignment completed",
+            "successful_assignments": successful,
+            "failed_assignments": errors
+        }
+        
+    async def unassign_groups_from_supervisor(self, supervisor_id: str):
+        result = await self.collection.update_many(
+            {"supervisor": supervisor_id},
+            {"$set": {"supervisor": None}}
+        )
+
+        return {
+            "message": f"Unassigned {result.modified_count} groups from supervisor {supervisor_id}"
         }

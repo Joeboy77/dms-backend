@@ -64,6 +64,16 @@ async def delete_fyp(
     return responses.Response(status_code=204)
 
 
+@router.get("/fyps/group/{group_id}", response_model=FypPublicWithProjectArea | None)
+async def get_fyp_by_group(
+    group_id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    # current_user: TokenData = Depends(get_current_token),
+):
+    controller = FypController(db)
+    return await controller.get_fyps_by_group(group_id)
+
+
 @router.get("/fyps/student/{student_id}", response_model=FypPublicWithProjectArea | None)
 async def get_fyp_by_student(
     student_id: str,

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, responses, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query, responses, UploadFile, Form, File
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token
@@ -39,6 +39,17 @@ async def create_submission(
     controller = SubmissionController(db)
     submission_data = submission.model_dump()
     return await controller.create_submission(submission_data)
+
+
+@router.post("/submissions/upload", response_model=SubmissionPublic)
+async def upload_file(
+    submission_id: str = Form(...),
+    uploaded_by: str = Form(...),
+    file: UploadFile = File(...),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    controller = SubmissionController(db)
+    return await controller.upload_file(submission_id, file, uploaded_by)
 
 
 @router.post("/submissions/review/{submission_id}", response_model=SubmissionPublic)

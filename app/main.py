@@ -29,6 +29,7 @@ from app.api.v1.routes import (
     reminders,
     students,
     student_interests,
+    projects,
     submissions,
     supervisors,
     complaints,
@@ -70,6 +71,7 @@ app.include_router(fypcheckins.router, prefix=settings.API_V1_STR)
 app.include_router(project_areas.router, prefix=settings.API_V1_STR)
 app.include_router(fyps.router, prefix=settings.API_V1_STR)
 app.include_router(programs.router, prefix=settings.API_V1_STR)
+app.include_router(projects.router, prefix=settings.API_V1_STR)
 app.include_router(deliverables.router, prefix=settings.API_V1_STR)
 app.include_router(submissions.router, prefix=settings.API_V1_STR)
 app.include_router(groups.router, prefix=settings.API_V1_STR)

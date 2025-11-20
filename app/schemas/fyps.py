@@ -12,22 +12,24 @@ class Page(BaseModel):
 
 
 class FypCreate(BaseModel):
-    student: PyObjectId
+    group: PyObjectId
     projectArea: PyObjectId
+    title: str
     checkin: PyObjectId
-    supervisor: PyObjectId | None = None
 
 
 class FypUpdate(BaseModel):
-    student: PyObjectId | None = None
+    group: PyObjectId | None = None
     projectArea: PyObjectId | None = None
+    title: str | None = None
     checkin: PyObjectId | None = None
-    supervisor: PyObjectId | None = None
 
 
 class FypPublic(Obj):
-    student: PyObjectId | str
+    group: PyObjectId | str
     projectArea: PyObjectId | str
+    title: str
+    progress_percentage: float = 0.0
     checkin: PyObjectId | str
     supervisor: PyObjectId | str | None = None
     createdAt: datetime = Field(validation_alias="createdAt")
@@ -35,7 +37,7 @@ class FypPublic(Obj):
 
     
 class FypPublicWithProjectArea(Obj):
-    student: PyObjectId
+    group: PyObjectId
     projectArea: ProjectAreaPublic
     checkin: PyObjectId
     supervisor: PyObjectId | None = None
@@ -45,7 +47,7 @@ class FypPublicWithProjectArea(Obj):
 
 class FypWithDetails(BaseModel):
     fyp: FypPublic
-    student_details: dict
+    group_details: dict
     project_area_details: List[ProjectAreaPublic]
     checkin_details: dict
     supervisor_details: dict

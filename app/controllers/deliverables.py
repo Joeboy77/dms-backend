@@ -48,46 +48,54 @@ class DeliverableController:
         return convert_objectid_to_str(deliverable)
 
 
-    async def create_deliverable(self, deliverable_data: dict):
-        # Find supervisor in supervisors collection and get associated lecturer
-        if "supervisor_id" in deliverable_data:
-            try:
-                supervisor_id = (
-                    ObjectId(deliverable_data["supervisor_id"])
-                    if isinstance(deliverable_data["supervisor_id"], str)
-                    else deliverable_data["supervisor_id"]
-                )
-                
-                # Find supervisor and their associated lecturer
-                supervisor = await self.db["supervisors"].find_one({"_id": ObjectId(supervisor_id)})
+    async def create_deliverable(self, supervisor_id: str, deliverable_data: dict):
+        """
+        Create a deliverable for a supervisor.
+        
+        Args:
+            supervisor_id: Supervisor ID (can be ObjectId string or lecturer academicId)
+            deliverable_data: Deliverable data dictionary
+        """
+        # Validate and resolve supervisor_id
+        supervisor_oid = None
+        try:
+            # Try as ObjectId first
+            if ObjectId.is_valid(supervisor_id):
+                supervisor_oid = ObjectId(supervisor_id)
+                supervisor = await self.db["supervisors"].find_one({"_id": supervisor_oid})
                 if not supervisor:
                     raise HTTPException(status_code=404, detail="Supervisor not found")
-                
-                # Get lecturer details - this is the actual supervisor_id we'll store
-                lecturer = await self.db["lecturers"].find_one({"_id": supervisor["lecturer_id"]})
+            else:
+                # Try to find by lecturer academicId
+                lecturer = await self.db["lecturers"].find_one({"academicId": supervisor_id})
                 if not lecturer:
-                    raise HTTPException(status_code=404, detail="Associated lecturer not found")
+                    raise HTTPException(status_code=404, detail=f"Supervisor with ID or academicId '{supervisor_id}' not found")
+                
+                # Find supervisor linked to lecturer
+                supervisor = await self.db["supervisors"].find_one({"lecturer_id": lecturer["_id"]})
+                if not supervisor:
+                    raise HTTPException(status_code=404, detail=f"Supervisor not found for lecturer {supervisor_id}")
+                
+                supervisor_oid = supervisor["_id"]
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid supervisor_id format: {str(e)}")
 
-                # Store supervisor._id as supervisor_id in deliverable
-                deliverable_data["supervisor_id"] = supervisor["_id"]
-            except Exception as e:
-                raise HTTPException(status_code=400, detail=f"Invalid supervisor_id format or not found: {str(e)}")
+        # Store supervisor._id as supervisor_id in deliverable
+        deliverable_data["supervisor_id"] = supervisor_oid
 
         # Auto-populate group_ids if not provided
         if not deliverable_data.get("group_ids"):
-            supervisor_id = deliverable_data["supervisor_id"]
-
             # Get all FYPs for this supervisor
             fyps = await self.db["fyps"].find({
                 "$or": [
-                    {"supervisor": supervisor_id},
-                    {"supervisor": str(supervisor_id)}
+                    {"supervisor": supervisor_oid},
+                    {"supervisor": str(supervisor_oid)}
                 ]
             }).to_list(None)
-            
-            print(f"Found {len(fyps)} FYPs for supervisor {supervisor_id}")
 
-            # Only include students that actually exist
+            # Collect all groups from the supervisor's FYPs
             group_ids = []
             for fyp in fyps:
                 if fyp.get("group"):
@@ -115,9 +123,10 @@ class DeliverableController:
                     continue
             deliverable_data["group_ids"] = group_ids
         # Add timestamps and initialize submissions count
-        deliverable_data["createdAt"] = datetime.now()
-        deliverable_data["updatedAt"] = datetime.now()
+        deliverable_data["createdAt"] = datetime.utcnow()
+        deliverable_data["updatedAt"] = datetime.utcnow()
         deliverable_data["total_submissions"] = 0
+        deliverable_data["status"] = "not_started"
 
         # Insert and return
         result = await self.collection.insert_one(deliverable_data)
