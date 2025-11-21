@@ -13,6 +13,8 @@ from app.schemas.submissions import SubmissionPublic, SubmissionStatus
 UPLOAD_DIR = "uploads/submissions"
 MAX_FILE_SIZE_MB = 10
 MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024  # 10MB
+
+
 class SubmissionController:
     def __init__(self, db: AsyncIOMotorDatabase):
         self.db = db
@@ -23,8 +25,13 @@ class SubmissionController:
         query = {}
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}
+            query["createdAt"] = {"$lt": datetime.fromisoformat(cursor)}
 
         submissions = await self.collection.find(query).sort("createdAt", -1).limit(limit).to_list(limit)
+
+        for submission in submissions:
+            submission["file_count"] = await self.submission_files_collection.count_documents({"submission_id": submission["_id"]})
+
 
         next_cursor = None
         if len(submissions) == limit:
@@ -34,6 +41,7 @@ class SubmissionController:
             "items": submissions,
             "next_cursor": next_cursor
         }
+
 
     async def get_submission_by_id(self, submission_id: str):
         submission = await self.collection.find_one({"_id": ObjectId(submission_id)})
@@ -146,6 +154,74 @@ class SubmissionController:
         )
 
         return submission_public
+    
+    
+    async def delete_file(self, submission_id: str, file_id: str, requested_by: str) -> SubmissionPublic:
+        # 1. Validate submission
+        submission = await self.collection.find_one({"_id": ObjectId(submission_id)})
+        if not submission:
+            raise HTTPException(status_code=404, detail="Submission not found")
+
+        group_id = submission["group_id"]
+
+        # 2. Validate group + user membership
+        group = await self.db["groups"].find_one({"_id": ObjectId(group_id)})
+        if not group:
+            raise HTTPException(status_code=404, detail="Group not found")
+
+        requested_by = ObjectId(requested_by)
+        if requested_by not in group["students"]:
+            raise HTTPException(status_code=403, detail="You are not allowed to delete files for this group")
+
+        # 3. Fetch file entry
+        file_doc = await self.submission_files_collection.find_one({
+            "_id": ObjectId(file_id),
+            "submission_id": ObjectId(submission_id)
+        })
+
+        if not file_doc:
+            raise HTTPException(status_code=404, detail="File not found for this submission")
+
+        file_path = file_doc["file_path"]
+
+        # 4. Delete from filesystem
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            print("⚠️ Failed to delete file from filesystem:", e)
+
+        # 5. Remove metadata document
+        await self.submission_files_collection.delete_one({"_id": ObjectId(file_id)})
+
+        # 6. Decrement file_count safely
+        await self.collection.update_one(
+            {"_id": ObjectId(submission_id)},
+            {"$inc": {"file_count": -1}}
+        )
+
+        # 7. Recalculate final count (to guarantee accuracy)
+        number_of_files = await self.submission_files_collection.count_documents({
+            "submission_id": ObjectId(submission_id)
+        })
+
+        # 8. Build updated SubmissionPublic (same structure as upload_file)
+        submission_public = SubmissionPublic(
+            _id=submission["_id"],
+            deliverable_id=submission["deliverable_id"],
+            project_id=submission["project_id"],
+            group_id=submission["group_id"],
+            lecturer_feedback=submission.get("lecturer_feedback"),
+            status=submission.get("status", SubmissionStatus.IN_PROGRESS),
+            attempt_number=submission.get("attempt_number", 1),
+            file_count=number_of_files,
+            submitted_at=submission.get("submitted_at"),
+            created_at=submission.get("created_at"),
+            updated_at=datetime.utcnow()
+        )
+
+        return submission_public
+
 
 
     
