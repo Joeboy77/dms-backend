@@ -52,6 +52,18 @@ async def upload_file(
     return await controller.upload_file(submission_id, file, uploaded_by)
 
 
+@router.delete("/files/{submission_id}/{file_id}", response_model=SubmissionPublic)
+async def delete_submission_file(
+    submission_id: str,
+    file_id: str,
+    requested_by: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+):
+    controller = SubmissionController(db)
+    return await controller.delete_file(submission_id, file_id, requested_by)
+
+
+
 @router.post("/submissions/review/{submission_id}", response_model=SubmissionPublic)
 async def review_submission(
     submission_id: str,
