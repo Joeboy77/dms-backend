@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 
 from bson import ObjectId
 from fastapi import HTTPException
@@ -10,7 +11,7 @@ class ProjectAreaController:
         self.db = db
         self.collection = db["project_areas"]
 
-    async def get_all_project_areas(self, limit: int = 10, cursor: str | None = None):
+    async def get_all_project_areas(self, limit: int = 10, cursor: Optional[str] = None):
         query = {}
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}

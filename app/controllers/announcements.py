@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException
@@ -106,7 +107,7 @@ class AnnouncementController:
         self,
         supervisor_id: str,
         limit: int = 20,
-        cursor: str | None = None
+        cursor: Optional[str] = None
     ):
         supervisor = await self.db["supervisors"].find_one({"_id": ObjectId(supervisor_id)})
         if not supervisor:
@@ -140,7 +141,7 @@ class AnnouncementController:
         self,
         student_id: str,
         limit: int = 20,
-        cursor: str | None = None
+        cursor: Optional[str] = None
     ):
         fyp = await self.db["fyps"].find_one(
             {"student": ObjectId(student_id)},

@@ -1,12 +1,13 @@
 from datetime import datetime
+from typing import Optional, List
 from pydantic import BaseModel, Field
 
 from app.schemas.base import Obj, PyObjectId
 
 
 class Page(BaseModel):
-    items: list["FypCheckinPublic"]
-    next_cursor: str | None = None
+    items: List["FypCheckinPublic"]
+    next_cursor: Optional[str] = None
 
 
 class FypCheckinCreate(BaseModel):
@@ -16,9 +17,9 @@ class FypCheckinCreate(BaseModel):
 
 
 class FypCheckinUpdate(BaseModel):
-    academicYear: PyObjectId | None = None
-    checkin: bool | None = None
-    active: bool | None = None
+    academicYear: Optional[PyObjectId] = None
+    checkin: Optional[bool] = None
+    active: Optional[bool] = None
 
 
 class FypCheckinPublic(Obj):

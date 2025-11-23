@@ -1,12 +1,13 @@
 from datetime import datetime
+from typing import Optional, List
 from pydantic import BaseModel, Field
 
 from app.schemas.base import Obj, PyObjectId
 
 
 class Page(BaseModel):
-    items: list["RecentActivityPublic"]
-    next_cursor: str | None = None
+    items: List["RecentActivityPublic"]
+    next_cursor: Optional[str] = None
 
 
 class RecentActivityCreate(BaseModel):
@@ -17,10 +18,10 @@ class RecentActivityCreate(BaseModel):
 
 
 class RecentActivityUpdate(BaseModel):
-    timestamp: datetime | None = None
-    user_id: PyObjectId | None = None
-    user_name: str | None = None
-    description: str | None = None
+    timestamp: Optional[datetime] = None
+    user_id: Optional[PyObjectId] = None
+    user_name: Optional[str] = None
+    description: Optional[str] = None
 
 
 class RecentActivityPublic(Obj):
@@ -28,5 +29,5 @@ class RecentActivityPublic(Obj):
     user_id: PyObjectId
     user_name: str
     description: str
-    created_at: datetime | None = Field(default=None, validation_alias="createdAt")
-    updated_at: datetime | None = Field(default=None, validation_alias="updatedAt")
+    created_at: Optional[datetime] = Field(default=None, validation_alias="createdAt")
+    updated_at: Optional[datetime] = Field(default=None, validation_alias="updatedAt")

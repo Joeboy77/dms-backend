@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token
@@ -13,7 +14,7 @@ router = APIRouter(tags=["FYP Checkins"])
 @router.get("/fyp-checkins", response_model=Page)
 async def get_all_checkins(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = FypCheckinController(db)
@@ -64,7 +65,7 @@ async def delete_checkin(
     return responses.Response(status_code=204)
 
 
-@router.get("/fyp-checkins/academic-year/{academic_year_id}", response_model=list[FypCheckinPublic])
+@router.get("/fyp-checkins/academic-year/{academic_year_id}", response_model=List[FypCheckinPublic])
 async def get_checkins_by_academic_year(
     academic_year_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -74,7 +75,7 @@ async def get_checkins_by_academic_year(
     return await controller.get_checkins_by_academic_year(academic_year_id)
 
 
-@router.get("/fyp-checkins/active", response_model=list[FypCheckinPublic])
+@router.get("/fyp-checkins/active", response_model=List[FypCheckinPublic])
 async def get_active_checkins(
     db: AsyncIOMotorDatabase = Depends(get_db),
     # current_user: TokenData = Depends(get_current_token),

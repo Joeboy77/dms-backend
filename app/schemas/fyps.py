@@ -1,14 +1,14 @@
 from datetime import datetime
+from typing import Optional, List, Dict, Union
 from pydantic import BaseModel, Field
-from typing import List
 
 from app.schemas.base import Obj, PyObjectId
 from app.schemas.project_areas import ProjectAreaPublic
 
 
 class Page(BaseModel):
-    items: list["FypPublic"]
-    next_cursor: str | None = None
+    items: List["FypPublic"]
+    next_cursor: Optional[str] = None
 
 
 class FypCreate(BaseModel):
@@ -19,19 +19,19 @@ class FypCreate(BaseModel):
 
 
 class FypUpdate(BaseModel):
-    group: PyObjectId | None = None
-    projectArea: PyObjectId | None = None
-    title: str | None = None
-    checkin: PyObjectId | None = None
+    group: Optional[PyObjectId] = None
+    projectArea: Optional[PyObjectId] = None
+    title: Optional[str] = None
+    checkin: Optional[PyObjectId] = None
 
 
 class FypPublic(Obj):
-    group: PyObjectId | str
-    projectArea: PyObjectId | str
+    group: Union[PyObjectId, str]
+    projectArea: Union[PyObjectId, str]
     title: str
     progress_percentage: float = 0.0
-    checkin: PyObjectId | str
-    supervisor: PyObjectId | str | None = None
+    checkin: Union[PyObjectId, str]
+    supervisor: Optional[Union[PyObjectId, str]] = None
     createdAt: datetime = Field(validation_alias="createdAt")
     updatedAt: datetime = Field(validation_alias="updatedAt")
 
@@ -40,63 +40,62 @@ class FypPublicWithProjectArea(Obj):
     group: PyObjectId
     projectArea: ProjectAreaPublic
     checkin: PyObjectId
-    supervisor: PyObjectId | None = None
+    supervisor: Optional[PyObjectId] = None
     createdAt: datetime = Field(validation_alias="createdAt")
     updatedAt: datetime = Field(validation_alias="updatedAt")
 
 
 class FypWithDetails(BaseModel):
     fyp: FypPublic
-    group_details: dict
+    group_details: Dict
     project_area_details: List[ProjectAreaPublic]
-    checkin_details: dict
-    supervisor_details: dict
+    checkin_details: Dict
+    supervisor_details: Dict
 
 
-# Dashboard Schemas
 class ProjectStage(BaseModel):
     name: str
-    status: str  # "completed", "in_progress", "not_started", "locked"
+    status: str
     completed: bool
 
 
 class DeliverableProgress(BaseModel):
     name: str
     deadline: datetime
-    status: str  # "Completed", "In Progress", "Not Started"
+    status: str
 
 
 class SupervisorInfo(BaseModel):
     name: str
-    academicId: str | None = None
-    areaOfInterest: str | None = None
-    email: str | None = None
-    title: str | None = None
-    department: str | None = None
+    academicId: Optional[str] = None
+    areaOfInterest: Optional[str] = None
+    email: Optional[str] = None
+    title: Optional[str] = None
+    department: Optional[str] = None
 
 
 class ProjectAreaInfo(BaseModel):
     title: str
-    description: str | None = None
-    topic: str | None = None  # This might be stored in FYP or separately
+    description: Optional[str] = None
+    topic: Optional[str] = None
 
 
 class ReminderInfo(BaseModel):
     title: str
     date: datetime
-    formatted: str | None = None
+    formatted: Optional[str] = None
 
 
 class ProjectOverview(BaseModel):
     stages: List[ProjectStage]
     completionPercentage: float
-    nextDeadline: datetime | None = None
+    nextDeadline: Optional[datetime] = None
 
 
 class CalendarInfo(BaseModel):
-    highlightedDates: List[str]  # List of date strings in YYYY-MM-DD format
-    month: int | None = None
-    year: int | None = None
+    highlightedDates: List[str]
+    month: Optional[int] = None
+    year: Optional[int] = None
 
 
 class FypDashboard(BaseModel):

@@ -1,32 +1,31 @@
 from __future__ import annotations
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Dict
 from pydantic import BaseModel, Field, ConfigDict
 
 from app.schemas.base import Obj, PyObjectId
 
 
 class Page(BaseModel):
-    items: list[AnnouncementPublic]
-    next_cursor: str | None = None
+    items: List[AnnouncementPublic]
+    next_cursor: Optional[str] = None
 
 
 class AnnouncementCreate(BaseModel):
     subject: str
     content: str
-    # If omitted or empty, announcement will be sent to ALL students under the supervisor
-    recipient_ids: list[PyObjectId] | None = None
+    recipient_ids: Optional[List[PyObjectId]] = None
     priority: str = "normal"
-    attachments: list[str] | None = None
+    attachments: Optional[List[str]] = None
     
     model_config = ConfigDict(populate_by_name=True)
 
 
 class AnnouncementUpdate(BaseModel):
-    subject: str | None = None
-    content: str | None = None
-    priority: str | None = None
-    attachments: list[str] | None = None
+    subject: Optional[str] = None
+    content: Optional[str] = None
+    priority: Optional[str] = None
+    attachments: Optional[List[str]] = None
 
 
 class AnnouncementPublic(Obj):
@@ -35,12 +34,12 @@ class AnnouncementPublic(Obj):
     sender_id: PyObjectId
     sender_name: str
     sender_email: str
-    recipient_ids: list[PyObjectId]
-    recipients: list[dict] | None = None
+    recipient_ids: List[PyObjectId]
+    recipients: Optional[List[Dict]] = None
     priority: str = "normal"
-    attachments: list[str] | None = None
+    attachments: Optional[List[str]] = None
     created_at: datetime
-    updated_at: datetime | None = None
+    updated_at: Optional[datetime] = None
     
     model_config = ConfigDict(populate_by_name=True)
 

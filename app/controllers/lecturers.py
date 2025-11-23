@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException
@@ -11,7 +12,7 @@ class LecturerController:
         self.collection = db["lecturers"]
         
         
-    async def _get_or_create_project_area(self, title: str, lecturer_id: ObjectId | None = None) -> ObjectId:
+    async def _get_or_create_project_area(self, title: str, lecturer_id: Optional[ObjectId] = None) -> ObjectId:
         title = (title or "").strip()
         if not title:
             raise ValueError("empty project area title")
@@ -37,7 +38,7 @@ class LecturerController:
         return res.inserted_id
     
     
-    async def _sync_project_area_interested_staff(self, lecturer_id: ObjectId, new_pa_ids: list[ObjectId], old_pa_ids: list[ObjectId] | None = None):
+    async def _sync_project_area_interested_staff(self, lecturer_id: ObjectId, new_pa_ids: List[ObjectId], old_pa_ids: Optional[List[ObjectId]] = None):
         """
         Ensure project_areas.interested_staff reflects lecturer membership:
          - add lecturer_id to any project areas in new_pa_ids
@@ -107,7 +108,7 @@ class LecturerController:
         return [id_to_title.get(str(i), None) for i in lookup_ids if id_to_title.get(str(i))]
     
 
-    async def get_all_lecturers(self, limit: int = 10, cursor: str | None = None):
+    async def get_all_lecturers(self, limit: int = 10, cursor: Optional[str] = None):
         query = {}
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}
@@ -173,7 +174,7 @@ class LecturerController:
         return created_lecturer
 
 
-    async def update_lecturer(self, lecturer_id: str, update_data: dict, current_pin: str | None = None):
+    async def update_lecturer(self, lecturer_id: str, update_data: dict, current_pin: Optional[str] = None):
         update_data = {k: v for k, v in update_data.items() if v is not None}
 
         if not update_data:

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException
@@ -22,7 +23,7 @@ class FypController:
             raise HTTPException(status_code=400, detail=f"Invalid {field_name}: {id_str}")
         return ObjectId(id_str)
 
-    async def get_all_fyps(self, limit: int = 10, cursor: str | None = None):
+    async def get_all_fyps(self, limit: int = 10, cursor: Optional[str] = None):
         query = {}
         if cursor:
             try:
@@ -437,7 +438,7 @@ class FypController:
             if lecturer:
                 # Resolve project areas if they're ObjectIds
                 project_areas_list = lecturer.get("projectAreas", [])
-                if project_areas_list and isinstance(project_areas_list[0] if project_areas_list else None, (ObjectId, str)):
+                if project_areas_list and isinstance(project_areas_List[0] if project_areas_list else None, (ObjectId, str)):
                     # Resolve ObjectIds to titles
                     from app.controllers.lecturers import LecturerController
                     lecturer_controller = LecturerController(self.db)

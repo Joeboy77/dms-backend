@@ -1,12 +1,13 @@
 from datetime import datetime
+from typing import Optional, List
 from pydantic import BaseModel, Field
 
 from app.schemas.base import Obj, PyObjectId
 
 
 class Page(BaseModel):
-    items: list["AcademicYearPublic"]
-    next_cursor: str | None = None
+    items: List["AcademicYearPublic"]
+    next_cursor: Optional[str] = None
 
 
 class AcademicYearCreate(BaseModel):
@@ -19,11 +20,11 @@ class AcademicYearCreate(BaseModel):
 
 
 class AcademicYearUpdate(BaseModel):
-    year: str | None = None
-    terms: int | None = None
-    status: str | None = None
-    currentTerm: int | None = None
-    deleted: bool | None = None
+    year: Optional[str] = None
+    terms: Optional[int] = None
+    status: Optional[str] = None
+    currentTerm: Optional[int] = None
+    deleted: Optional[bool] = None
 
 
 class AcademicYearPublic(Obj):

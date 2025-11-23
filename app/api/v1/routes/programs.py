@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from typing import List
+from typing import List, Optional
 
 from app.core.authentication.auth_middleware import get_current_token
 from app.core.database import get_db
@@ -14,7 +14,7 @@ router = APIRouter(tags=["Programs"])
 @router.get("/programs", response_model=Page)
 async def get_all_programs(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = ProgramController(db)
@@ -65,7 +65,7 @@ async def delete_program(
     return responses.Response(status_code=204)
 
 
-@router.get("/programs/search/{title}", response_model=list[ProgramPublic])
+@router.get("/programs/search/{title}", response_model=List[ProgramPublic])
 async def search_programs_by_title(
     title: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -75,7 +75,7 @@ async def search_programs_by_title(
     return await controller.search_programs_by_title(title)
 
 
-@router.get("/students-dashboard", response_model=list[StudentDashboardResponse])
+@router.get("/students-dashboard", response_model=List[StudentDashboardResponse])
 async def get_all_student_dashboard(
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: TokenData = Depends(get_current_token),

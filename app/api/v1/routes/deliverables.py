@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token
@@ -13,7 +14,7 @@ router = APIRouter(tags=["Deliverables"])
 @router.get("/deliverables", response_model=Page)
 async def get_all_deliverables(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = DeliverableController(db)
@@ -75,7 +76,7 @@ async def delete_deliverable(
     return responses.Response(status_code=204)
 
 
-@router.get("/deliverables/supervisor/{supervisor_id}", response_model=list[DeliverablePublic])
+@router.get("/deliverables/supervisor/{supervisor_id}", response_model=List[DeliverablePublic])
 async def get_deliverables_by_supervisor(
     supervisor_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -85,7 +86,7 @@ async def get_deliverables_by_supervisor(
     return await controller.get_deliverables_by_supervisor(supervisor_id)
 
 
-@router.get("/deliverables/active", response_model=list[DeliverablePublic])
+@router.get("/deliverables/active", response_model=List[DeliverablePublic])
 async def get_active_deliverables(
     db: AsyncIOMotorDatabase = Depends(get_db),
     # current_user: TokenData = Depends(get_current_token),
@@ -94,7 +95,7 @@ async def get_active_deliverables(
     return await controller.get_active_deliverables()
 
 
-@router.get("/deliverables/upcoming/{limit}", response_model=list[DeliverablePublic])
+@router.get("/deliverables/upcoming/{limit}", response_model=List[DeliverablePublic])
 async def get_upcoming_deliverables(
     limit: int = 10,
     db: AsyncIOMotorDatabase = Depends(get_db),

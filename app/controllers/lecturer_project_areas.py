@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException
@@ -9,7 +10,7 @@ class LecturerProjectAreaController:
         self.db = db
         self.collection = db["lecturer_project_areas"]
 
-    async def get_all_lecturer_project_areas(self, limit: int = 10, cursor: str | None = None):
+    async def get_all_lecturer_project_areas(self, limit: int = 10, cursor: Optional[str] = None):
         query = {}
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}
@@ -200,7 +201,7 @@ class LecturerProjectAreaController:
                 "id": str(lpa["_id"]),
                 "lecturer": {
                     "lecturer_id": str(lecturer["_id"]) if lecturer else None,
-                    "name": f"{lecturer.get("surname", "")} {lecturer.get("otherNames", "")}" if lecturer else None,
+                    "name": f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}" if lecturer else None,
                     "email": lecturer.get("email", "") if lecturer else None,
                     "phone": lecturer.get("phone", "") if lecturer else None,
                     "department": lecturer.get("department", "Computer Science") if lecturer else None,

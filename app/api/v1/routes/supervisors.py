@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token, RoleBasedAccessControl
@@ -24,7 +25,7 @@ require_coordinator = RoleBasedAccessControl(["projects_coordinator"])
 @router.get("/supervisors")
 async def get_all_supervisors(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: TokenData = Depends(require_coordinator)
 ):
@@ -35,7 +36,7 @@ async def get_all_supervisors(
 @router.get("/supervisors-with-details")
 async def get_all_supervisors_with_lecturer_details(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: TokenData = Depends(require_coordinator)
 ):
@@ -107,7 +108,7 @@ async def get_lecturer_by_supervisor_id(
     return await controller.get_lecturer_by_supervisor_id(id)
 
 
-@router.get("/supervisors/academic-year/{academic_year_id}", response_model=list[SupervisorPublic])
+@router.get("/supervisors/academic-year/{academic_year_id}", response_model=List[SupervisorPublic])
 async def get_supervisors_by_academic_year(
     academic_year_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),

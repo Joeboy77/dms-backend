@@ -1,12 +1,13 @@
 from datetime import datetime
+from typing import Optional, List
 from pydantic import BaseModel, Field
 
 from app.schemas.base import Obj, PyObjectId
 
 
 class Page(BaseModel):
-    items: list["ProgramPublic"]
-    next_cursor: str | None = None
+    items: List["ProgramPublic"]
+    next_cursor: Optional[str] = None
 
 
 class ProgramCreate(BaseModel):
@@ -18,10 +19,10 @@ class ProgramCreate(BaseModel):
 
 
 class ProgramUpdate(BaseModel):
-    title: str | None = None
-    tag: str | None = None
-    description: str | None = None
-    code: str | None = None
+    title: Optional[str] = None
+    tag: Optional[str] = None
+    description: Optional[str] = None
+    code: Optional[str] = None
 
 
 class ProgramPublic(Obj):
@@ -36,6 +37,6 @@ class ProgramPublic(Obj):
 
 class StudentDashboardResponse(BaseModel):
     student_id: PyObjectId
-    student_image: str | None = None
-    program: ProgramPublic | None = None
-    progress_status: str  # "not_started", "in_progress", "completed"
+    student_image: Optional[str] = None
+    program: Optional[ProgramPublic] = None
+    progress_status: str

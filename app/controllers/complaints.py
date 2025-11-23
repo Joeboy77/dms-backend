@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException
@@ -19,7 +20,7 @@ class ComplaintController:
         random_part2 = ''.join(random.choices(string.digits, k=5))
         return f"CMP-{random_part1}-{random_part2}"
 
-    async def get_all_complaints(self, limit: int = 10, cursor: str | None = None):
+    async def get_all_complaints(self, limit: int = 10, cursor: Optional[str] = None):
         query = {"deleted": {"$ne": True}}
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}
@@ -115,7 +116,7 @@ class ComplaintController:
             raise HTTPException(status_code=404, detail="Complaint not found with this reference")
         return convert_objectid_to_str(complaint)
 
-    async def assign_complaint(self, complaint_id: str, assigned_to: list[str]):
+    async def assign_complaint(self, complaint_id: str, assigned_to: List[str]):
         assigned_to_objects = [ObjectId(user_id) for user_id in assigned_to]
 
         # Add action for assignment
@@ -167,7 +168,7 @@ class ComplaintController:
         updated_complaint = await self.collection.find_one({"_id": ObjectId(complaint_id)})
         return convert_objectid_to_str(updated_complaint)
 
-    async def update_status(self, complaint_id: str, status: str, notes: str | None = None):
+    async def update_status(self, complaint_id: str, status: str, notes: Optional[str] = None):
         action = {
             "action_type": "STATUS_CHANGE",
             "description": f"Status changed to {status}",

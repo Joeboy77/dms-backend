@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
 from enum import Enum
 
@@ -14,38 +15,35 @@ class SubmissionStatus(str, Enum):
 
 
 class Page(BaseModel):
-    items: list["SubmissionPublic"]
-    next_cursor: str | None = None
+    items: List["SubmissionPublic"]
+    next_cursor: Optional[str] = None
 
 
 class SubmissionCreate(BaseModel):
     deliverable_id: PyObjectId
-    project_id: PyObjectId      # NEW: needed for clean grouping
+    project_id: PyObjectId
     group_id: PyObjectId
-    attempt_number: int = 1     # default first attempt
-    lecturer_feedback: str | None = None
+    attempt_number: int = 1
+    lecturer_feedback: Optional[str] = None
     status: SubmissionStatus = SubmissionStatus.IN_PROGRESS
 
 
 class SubmissionUpdate(BaseModel):
-    lecturer_feedback: str | None = None
-    status: SubmissionStatus | None = None
+    lecturer_feedback: Optional[str] = None
+    status: Optional[SubmissionStatus] = None
 
 
 class SubmissionPublic(Obj):
     deliverable_id: PyObjectId
     project_id: PyObjectId
     group_id: PyObjectId
-
-    lecturer_feedback: str | None = None
+    lecturer_feedback: Optional[str] = None
     status: SubmissionStatus = SubmissionStatus.IN_PROGRESS
     attempt_number: int
     file_count: int = 0
-
     submitted_at: datetime
     created_at: datetime
     updated_at: datetime
-
 
     class Config:
         populate_by_name = True
@@ -56,19 +54,19 @@ class GroupSubmissionInfo(BaseModel):
     group_id: PyObjectId
     group_name: str
     student_count: int
-    students: list[dict] = []
+    students: List[Dict] = []
     submission: SubmissionPublic
-    files: list[dict] = []
+    files: List[Dict] = []
 
 
 class SubmissionWithFiles(BaseModel):
     submission: SubmissionPublic
-    files: list[dict] = []
-    group_details: dict | None = None
+    files: List[Dict] = []
+    group_details: Optional[Dict] = None
 
 
 class SubmissionDetailsResponse(BaseModel):
     submission: SubmissionPublic
-    group: dict
-    students: list[dict] = []
-    files: list[dict] = []
+    group: Dict
+    students: List[Dict] = []
+    files: List[Dict] = []

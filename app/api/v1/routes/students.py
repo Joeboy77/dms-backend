@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token, RoleBasedAccessControl
@@ -13,7 +14,7 @@ require_coordinator = RoleBasedAccessControl(["projects_coordinator"])
 @router.get("/students", response_model=Page)
 async def get_all_students(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: TokenData = Depends(require_coordinator)
 ):
@@ -24,12 +25,13 @@ async def get_all_students(
 @router.get("/students/detailed")
 async def get_all_students_with_details(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
+    assignment_status: Optional[str] = Query(None, regex="^(all|assigned|unassigned)$"),
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: TokenData = Depends(require_coordinator)
 ):
     controller = StudentController(db)
-    return await controller.get_all_students_with_details(limit=limit, cursor=cursor)
+    return await controller.get_all_students_with_details(limit=limit, cursor=cursor, assignment_status=assignment_status)
 
 
 @router.get("/students/count")
@@ -49,6 +51,21 @@ async def get_student(
 ):
     controller = StudentController(db)
     return await controller.get_student_by_id(id)
+
+
+@router.get("/students/{id}/profile")
+async def get_student_profile(
+    id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_coordinator)
+):
+    try:
+        controller = StudentController(db)
+        return await controller.get_student_profile_with_submissions(id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching student profile: {str(e)}")
 
 
 @router.post("/students", response_model=StudentPublic)
@@ -85,7 +102,7 @@ async def delete_student(
     return responses.Response(status_code=204)
 
 
-@router.get("/students/major/{major}", response_model=list[StudentPublic])
+@router.get("/students/major/{major}", response_model=List[StudentPublic])
 async def get_students_by_major(
     major: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -95,7 +112,7 @@ async def get_students_by_major(
     return await controller.get_students_by_major(major)
 
 
-@router.get("/students/year/{year}", response_model=list[StudentPublic])
+@router.get("/students/year/{year}", response_model=List[StudentPublic])
 async def get_students_by_year(
     year: int,
     db: AsyncIOMotorDatabase = Depends(get_db),

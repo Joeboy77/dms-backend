@@ -1,23 +1,24 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
 
 from app.schemas.base import Obj, PyObjectId
 
 
 class Page(BaseModel):
-    items: list["GroupPublic"]
-    next_cursor: str | None = None
+    items: List["GroupPublic"]
+    next_cursor: Optional[str] = None
 
 
 class GroupCreate(BaseModel):
     name: str
-    project_title: str | None = None
-    students: list[PyObjectId] = []
+    project_title: Optional[str] = None
+    students: List[PyObjectId] = []
 
 
 class GroupUpdate(BaseModel):
-    name: str | None = None
-    project_title: str | None = None
+    name: Optional[str] = None
+    project_title: Optional[str] = None
 
 
 class GroupAddStudent(BaseModel):
@@ -30,9 +31,9 @@ class GroupRemoveStudent(BaseModel):
 
 class GroupPublic(Obj):
     name: str
-    project_title: str | None = None
-    supervisor: str | None = None
-    students: list[PyObjectId] = []
+    project_title: Optional[str] = None
+    supervisor: Optional[str] = None
+    students: List[PyObjectId] = []
     student_count: int
     created_at: datetime = Field(alias="createdAt")
     updated_at: datetime = Field(alias="updatedAt")
@@ -44,14 +45,14 @@ class GroupPublic(Obj):
 
 class GroupWithStudents(BaseModel):
     group: GroupPublic
-    students: list[dict] = []  # Will contain student details
+    students: List[Dict] = []
     
     
 class GroupAssignmentRequest(BaseModel):
-    group_ids: list[str]  # Accept group IDs as strings
+    group_ids: List[str]
     academic_year_id: str
     supervisor_id: PyObjectId
     
 class GroupAssignmentResponse(BaseModel):
-    assigned_groups: list[str] = []
-    assignment_errors: list[str] = []
+    assigned_groups: List[str] = []
+    assignment_errors: List[str] = []

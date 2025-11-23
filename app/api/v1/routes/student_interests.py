@@ -1,7 +1,7 @@
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 from app.core.authentication.auth_middleware import get_current_token
@@ -43,7 +43,7 @@ async def submit_preferences(data: StudentPreferenceSchema, db: AsyncIOMotorData
 @router.get("/student-interests", response_model=Page)
 async def get_all_student_interests(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     """Get all student interests with pagination"""

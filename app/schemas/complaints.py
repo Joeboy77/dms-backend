@@ -1,57 +1,58 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
 
 from app.schemas.base import Obj, PyObjectId
 
 
 class Page(BaseModel):
-    items: list["ComplaintPublic"]
-    next_cursor: str | None = None
+    items: List["ComplaintPublic"]
+    next_cursor: Optional[str] = None
 
 
 class ComplaintCreate(BaseModel):
     subject: str
     complaint: str
-    reference: str | None = None
+    reference: Optional[str] = None
     category: PyObjectId
-    attachment: str | None = None
+    attachment: Optional[str] = None
     status: str = "PENDING"
-    createdBy: dict | None = None
-    assignedTo: list[PyObjectId] = []
-    actions: list[dict] = []
+    createdBy: Optional[Dict] = None
+    assignedTo: List[PyObjectId] = []
+    actions: List[Dict] = []
     deleted: bool = False
-    feedbacks: list[dict] = []
-    admin: PyObjectId | None = None
+    feedbacks: List[Dict] = []
+    admin: Optional[PyObjectId] = None
 
 
 class ComplaintUpdate(BaseModel):
-    subject: str | None = None
-    complaint: str | None = None
-    reference: str | None = None
-    category: PyObjectId | None = None
-    attachment: str | None = None
-    status: str | None = None
-    createdBy: dict | None = None
-    assignedTo: list[PyObjectId] | None = None
-    actions: list[dict] | None = None
-    deleted: bool | None = None
-    feedbacks: list[dict] | None = None
-    admin: PyObjectId | None = None
+    subject: Optional[str] = None
+    complaint: Optional[str] = None
+    reference: Optional[str] = None
+    category: Optional[PyObjectId] = None
+    attachment: Optional[str] = None
+    status: Optional[str] = None
+    createdBy: Optional[Dict] = None
+    assignedTo: Optional[List[PyObjectId]] = None
+    actions: Optional[List[Dict]] = None
+    deleted: Optional[bool] = None
+    feedbacks: Optional[List[Dict]] = None
+    admin: Optional[PyObjectId] = None
 
 
 class ComplaintPublic(Obj):
     subject: str
     complaint: str
-    reference: str | None = None
+    reference: Optional[str] = None
     category: PyObjectId
-    attachment: str | None = None
+    attachment: Optional[str] = None
     status: str = "PENDING"
-    createdBy: dict | None = None
-    assignedTo: list[PyObjectId] = []
-    actions: list[dict] = []
+    createdBy: Optional[Dict] = None
+    assignedTo: List[PyObjectId] = []
+    actions: List[Dict] = []
     deleted: bool = False
-    feedbacks: list[dict] = []
-    admin: PyObjectId | None = None
+    feedbacks: List[Dict] = []
+    admin: Optional[PyObjectId] = None
     createdAt: datetime = Field(validation_alias="createdAt")
     updatedAt: datetime = Field(validation_alias="updatedAt")
 
@@ -61,7 +62,7 @@ class ComplaintAction(BaseModel):
     description: str
     performed_by: PyObjectId
     performed_at: datetime
-    notes: str | None = None
+    notes: Optional[str] = None
 
 
 class ComplaintFeedback(BaseModel):
@@ -69,4 +70,4 @@ class ComplaintFeedback(BaseModel):
     message: str
     provided_by: PyObjectId
     provided_at: datetime
-    rating: int | None = None
+    rating: Optional[int] = None

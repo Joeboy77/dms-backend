@@ -22,18 +22,57 @@ async def get_student_statistics(
     - Unassigned students (no supervisor)
     """
     try:
-        total_students = await db["students"].count_documents({})
+        from bson import ObjectId
         
+        total_students = await db["students"].count_documents({"deleted": {"$ne": True}})
         
-        assigned_students = await db["fyps"].count_documents({
-            "supervisor": {"$exists": True, "$ne": None}
-        })
+        assigned_count = 0
+        students = await db["students"].find({"deleted": {"$ne": True}}).to_list(None)
+        
+        for student in students:
+            is_assigned = False
+            
+            group = await db["groups"].find_one({
+                "$or": [
+                    {"students": {"$in": [student["_id"], ObjectId(student["_id"])]}},
+                    {"members": {"$in": [student["_id"], ObjectId(student["_id"])]}}
+                ],
+                "status": {"$ne": "inactive"}
+            })
+            
+            if group and group.get("supervisor"):
+                group_supervisor_id = group["supervisor"]
+                if isinstance(group_supervisor_id, str):
+                    if ObjectId.is_valid(group_supervisor_id):
+                        supervisor = await db["supervisors"].find_one({"_id": ObjectId(group_supervisor_id)})
+                    else:
+                        supervisor = None
+                else:
+                    supervisor = await db["supervisors"].find_one({"_id": group_supervisor_id})
+                if supervisor:
+                    is_assigned = True
+            
+            # If not assigned via group, check individual FYP assignment
+            if not is_assigned:
+                fyp = await db["fyps"].find_one({
+                    "$or": [
+                        {"student": str(student["_id"])},
+                        {"student": ObjectId(student["_id"])}
+                    ]
+                })
+                if fyp and fyp.get("supervisor"):
+                    supervisor = await db["supervisors"].find_one({"_id": ObjectId(fyp["supervisor"])})
+                    if supervisor:
+                        is_assigned = True
+            
+            if is_assigned:
+                assigned_count += 1
 
-        unassigned_students = total_students - assigned_students
+        unassigned_students = total_students - assigned_count
 
         return {
             "total_students": total_students,
-            "assigned_students": assigned_students,
+            "assigned_students": assigned_count,
             "unassigned_students": unassigned_students
         }
         
@@ -44,7 +83,7 @@ async def get_student_statistics(
 @router.get("/coordinator/recent-activities")
 async def get_recent_activities(
     page: int = 1,
-    per_page: int = 12,
+    per_page: int = 5,
     db: AsyncIOMotorDatabase = Depends(get_db),
     # current_user: TokenData = Depends(require_coordinator)  # Temporarily disabled for testing
 ):

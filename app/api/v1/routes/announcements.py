@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 from app.core.authentication.auth_middleware import RoleBasedAccessControl, get_current_token
@@ -45,7 +45,7 @@ async def create_announcement(
 @router.get("/announcements", response_model=Page)
 async def get_supervisor_announcements(
     limit: int = Query(20, ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: TokenData = Depends(require_supervisor)
 ):
@@ -64,7 +64,7 @@ async def get_supervisor_announcements(
 @router.get("/announcements/student", response_model=Page)
 async def get_student_announcements(
     limit: int = Query(20, ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: TokenData = Depends(require_student)
 ):

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token
@@ -13,7 +14,7 @@ router = APIRouter(tags=["Lecturers"])
 @router.get("/lecturers", response_model=Page)
 async def get_all_lecturers(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = LecturerController(db)
@@ -74,7 +75,7 @@ async def delete_lecturer(
     return responses.Response(status_code=204)
 
 
-@router.get("/lecturers/search/{name}", response_model=list[LecturerPublic])
+@router.get("/lecturers/search/{name}", response_model=List[LecturerPublic])
 async def search_lecturers_by_name(
     name: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -84,7 +85,7 @@ async def search_lecturers_by_name(
     return await controller.search_lecturers_by_name(name)
 
 
-@router.get("/lecturers/department/{department}", response_model=list[LecturerPublic])
+@router.get("/lecturers/department/{department}", response_model=List[LecturerPublic])
 async def get_lecturers_by_department(
     department: str,
     db: AsyncIOMotorDatabase = Depends(get_db),

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException
@@ -9,7 +10,7 @@ class SupervisorController:
         self.db = db
         self.collection = db["supervisors"]
 
-    async def get_all_supervisors(self, limit: int = 10, cursor: str | None = None):
+    async def get_all_supervisors(self, limit: int = 10, cursor: Optional[str] = None):
         query = {}
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}
@@ -190,7 +191,7 @@ class SupervisorController:
             "lecturer": lecturer
         }
 
-    async def get_all_supervisors_with_lecturer_details(self, limit: int = 10, cursor: str | None = None):
+    async def get_all_supervisors_with_lecturer_details(self, limit: int = 10, cursor: Optional[str] = None):
         query = {}
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}

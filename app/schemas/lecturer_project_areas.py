@@ -1,36 +1,37 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
 
 from app.schemas.base import Obj, PyObjectId
 
 
 class Page(BaseModel):
-    items: list["LecturerProjectAreaPublic"]
-    next_cursor: str | None = None
+    items: List["LecturerProjectAreaPublic"]
+    next_cursor: Optional[str] = None
 
 
 class LecturerProjectAreaCreate(BaseModel):
     lecturer: PyObjectId
-    projectAreas: list[PyObjectId]
+    projectAreas: List[PyObjectId]
     academicYear: PyObjectId
 
 
 class LecturerProjectAreaUpdate(BaseModel):
-    lecturer: PyObjectId | None = None
-    projectAreas: list[PyObjectId] | None = None
-    academicYear: PyObjectId | None = None
+    lecturer: Optional[PyObjectId] = None
+    projectAreas: Optional[List[PyObjectId]] = None
+    academicYear: Optional[PyObjectId] = None
 
 
 class LecturerProjectAreaPublic(Obj):
     lecturer: PyObjectId
-    projectAreas: list[PyObjectId]
+    projectAreas: List[PyObjectId]
     academicYear: PyObjectId
     createdAt: datetime = Field(validation_alias="createdAt")
     updatedAt: datetime = Field(validation_alias="updatedAt")
 
 
 class StudentInfoResponse(BaseModel):
-    student: dict
-    supervisor: dict | None = None
-    project_area: dict | None = None
-    fyp_details: dict | None = None
+    student: Dict
+    supervisor: Optional[Dict] = None
+    project_area: Optional[Dict] = None
+    fyp_details: Optional[Dict] = None

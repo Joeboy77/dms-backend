@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException
@@ -9,7 +10,7 @@ class GroupController:
         self.db = db
         self.collection = db["groups"]
 
-    async def get_all_groups(self, limit: int = 10, cursor: str | None = None):
+    async def get_all_groups(self, limit: int = 10, cursor: Optional[str] = None):
         query = {}
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}
@@ -151,14 +152,90 @@ class GroupController:
             "students": students
         }
 
+    async def get_group_details_with_submissions(self, group_id: str):
+        group = await self.get_group_by_id(group_id)
+        
+        students = []
+        for student_id in group.get("students", []):
+            student = await self.db["students"].find_one({"_id": student_id})
+            if student:
+                student_name = f"{student.get('surname', '')} {student.get('otherNames', '')}".strip()
+                
+                program_name = "Unknown Program"
+                program_field = student.get("program", "")
+                if program_field:
+                    if isinstance(program_field, str) and len(program_field) == 24 and ObjectId.is_valid(program_field):
+                        program = await self.db["programs"].find_one({"_id": ObjectId(program_field)})
+                        program_name = program.get("title", program.get("name", "Unknown Program")) if program else "Unknown Program"
+                    else:
+                        program_name = program_field
+                
+                students.append({
+                    "id": str(student["_id"]),
+                    "academic_id": student.get("academicId", ""),
+                    "name": student_name,
+                    "program": program_name,
+                    "image": student.get("image", ""),
+                    "email": student.get("email", "")
+                })
+        
+        submissions_data = []
+        
+        if group.get("supervisor"):
+            deliverables = await self.db["deliverables"].find({
+                "supervisor_id": group["supervisor"]
+            }).sort("created_at", 1).to_list(length=None)
+            
+            for deliverable in deliverables:
+                deliverable_id = deliverable["_id"]
+                
+                submission = await self.db["submissions"].find_one({
+                    "group_id": ObjectId(group_id),
+                    "deliverable_id": deliverable_id
+                })
+                
+                files = []
+                if submission:
+                    files = await self.db["submission_files"].find({
+                        "submission_id": submission["_id"]
+                    }).to_list(length=None)
+                
+                submissions_data.append({
+                    "deliverable_id": str(deliverable_id),
+                    "deliverable_name": deliverable.get("name", deliverable.get("title", "")),
+                    "status": submission.get("status", "not_started") if submission else "not_started",
+                    "submitted_at": submission.get("createdAt") if submission else None,
+                    "files": [
+                        {
+                            "id": str(file["_id"]),
+                            "file_name": file.get("file_name", ""),
+                            "file_path": file.get("file_path", ""),
+                            "file_type": file.get("file_type", ""),
+                            "file_size": file.get("file_size", 0),
+                            "uploaded_at": file.get("createdAt")
+                        }
+                        for file in files
+                    ]
+                })
+        
+        return {
+            "group": {
+                "id": str(group["_id"]),
+                "name": group.get("name", ""),
+                "project_topic": group.get("project_topic", ""),
+                "created_at": group.get("createdAt"),
+                "member_count": len(students),
+                "members": students
+            },
+            "submissions": submissions_data
+        }
 
-    async def assign_groups_to_supervisor(self, group_ids: list[str], supervisor_id: str):
-    # Verify supervisor
+
+    async def assign_groups_to_supervisor(self, group_ids: List[str], supervisor_id: str):
         supervisor = await self.db["supervisors"].find_one({"_id": ObjectId(supervisor_id)})
         if not supervisor:
             raise HTTPException(status_code=404, detail="Supervisor not found")
 
-        # Fetch lecturer linked to supervisor
         lecturer = await self.db["lecturers"].find_one({"_id": ObjectId(supervisor["lecturer_id"])})
         if not lecturer:
             raise HTTPException(status_code=404, detail="Lecturer for supervisor not found")
@@ -168,7 +245,6 @@ class GroupController:
 
         for group_id in group_ids:
             try:
-                # Verify group exists
                 group = await self.collection.find_one({"_id": ObjectId(group_id)})
                 if not group:
                     errors.append(f"Group with ID {group_id} not found")
@@ -224,3 +300,24 @@ class GroupController:
         return {
             "message": f"Unassigned {result.modified_count} groups from supervisor {supervisor_id}"
         }
+
+    async def get_groups_by_student(self, student_id: str):
+        student = await self.db["students"].find_one({"academicId": student_id})
+        if not student and ObjectId.is_valid(student_id):
+            student = await self.db["students"].find_one({"_id": ObjectId(student_id)})
+        if not student:
+            return []
+
+        student_oid = student["_id"]
+        
+        groups = await self.collection.find({
+            "students": {"$in": [student_oid, ObjectId(student_oid)]}
+        }).to_list(None)
+        
+        formatted_groups = []
+        for group in groups:
+            group["student_count"] = len(group.get("students", []))
+            group["id"] = str(group["_id"])
+            formatted_groups.append(group)
+        
+        return formatted_groups

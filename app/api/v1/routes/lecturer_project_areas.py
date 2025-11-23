@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token
@@ -13,7 +14,7 @@ router = APIRouter(tags=["Lecturer Project Areas"])
 @router.get("/lecturer-project-areas", response_model=Page)
 async def get_all_lecturer_project_areas(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = LecturerProjectAreaController(db)
@@ -64,7 +65,7 @@ async def delete_lecturer_project_area(
     return responses.Response(status_code=204)
 
 
-@router.get("/lecturer-project-areas/lecturer/{lecturer_id}", response_model=list[LecturerProjectAreaPublic])
+@router.get("/lecturer-project-areas/lecturer/{lecturer_id}", response_model=List[LecturerProjectAreaPublic])
 async def get_lecturer_project_areas_by_lecturer(
     lecturer_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -74,7 +75,7 @@ async def get_lecturer_project_areas_by_lecturer(
     return await controller.get_by_lecturer(lecturer_id)
 
 
-@router.get("/lecturer-project-areas/academic-year/{academic_year_id}", response_model=list[LecturerProjectAreaPublic])
+@router.get("/lecturer-project-areas/academic-year/{academic_year_id}", response_model=List[LecturerProjectAreaPublic])
 async def get_lecturer_project_areas_by_academic_year(
     academic_year_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),

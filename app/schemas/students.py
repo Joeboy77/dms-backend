@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List
 from pydantic import BaseModel, Field, ConfigDict
 from bson import ObjectId
 
@@ -6,80 +7,80 @@ from app.schemas.base import Obj, PyObjectId
 
 
 class Page(BaseModel):
-    items: list["StudentPublic"]
-    next_cursor: str | None = None
+    items: List["StudentPublic"]
+    next_cursor: Optional[str] = None
 
 
 class StudentAssignmentRequest(BaseModel):
-    student_ids: list[str]  # Accept academic IDs as strings
+    student_ids: List[str]
     academic_year_id: PyObjectId
     supervisor_id: PyObjectId
 
 
 class StudentCreate(BaseModel):
-    title: str | None = None
+    title: Optional[str] = None
     surname: str
-    otherNames: str | None = None
+    otherNames: Optional[str] = None
     email: str
-    phone: str | None = None
-    program: PyObjectId | None = None
-    level: PyObjectId | None = None
+    phone: Optional[str] = None
+    program: Optional[PyObjectId] = None
+    level: Optional[PyObjectId] = None
     academicId: str
     pin: str
-    academicYears: list[PyObjectId] | None = None
+    academicYears: Optional[List[PyObjectId]] = None
     deleted: bool = False
-    type: str = "UNDERGRADUATE" # DEFERRED
-    admissionYear: PyObjectId | None = None
-    currentAcademicYear: PyObjectId | None = None
-    classGroup: PyObjectId | None = None
-    image: str | None = None
+    type: str = "UNDERGRADUATE"
+    admissionYear: Optional[PyObjectId] = None
+    currentAcademicYear: Optional[PyObjectId] = None
+    classGroup: Optional[PyObjectId] = None
+    image: Optional[str] = None
     
     model_config = ConfigDict(populate_by_name=True)
 
 
 class StudentUpdate(BaseModel):
-    title: str | None = None
-    surname: str | None = None
-    otherNames: str | None = None
-    email: str | None = None
-    phone: str | None = None
-    program: PyObjectId | None = None
-    level: PyObjectId | None = None
-    academicId: str | None = None
-    academicYears: list[PyObjectId] | None = None
-    deleted: bool | None = None
-    type: str | None = None
-    admissionYear: PyObjectId | None = None
-    currentAcademicYear: PyObjectId | None = None
-    classGroup: PyObjectId | None = None
-    image: str | None = None
+    title: Optional[str] = None
+    surname: Optional[str] = None
+    otherNames: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    program: Optional[PyObjectId] = None
+    level: Optional[PyObjectId] = None
+    academicId: Optional[str] = None
+    academicYears: Optional[List[PyObjectId]] = None
+    deleted: Optional[bool] = None
+    type: Optional[str] = None
+    admissionYear: Optional[PyObjectId] = None
+    currentAcademicYear: Optional[PyObjectId] = None
+    classGroup: Optional[PyObjectId] = None
+    image: Optional[str] = None
     
     model_config = ConfigDict(populate_by_name=True)
 
 
 class StudentPublic(Obj):
-    title: str | None = None
+    title: Optional[str] = None
     surname: str
-    otherNames: str | None = None
+    otherNames: Optional[str] = None
     email: str
-    phone: str | None = None
-    program: PyObjectId | None = None
-    level: PyObjectId | None = None
+    phone: Optional[str] = None
+    program: Optional[PyObjectId] = None
+    level: Optional[PyObjectId] = None
     createdAt: datetime = Field(validation_alias="createdAt")
-    updatedAt: datetime | None = Field(default=None, validation_alias="updatedAt")
-    academicId: str | None = Field(default=None, validation_alias="studentID")
-    pin: str | None = Field(default=None, validation_alias="pin")
-    academicYears: list[PyObjectId] | None = None
+    updatedAt: Optional[datetime] = Field(default=None, validation_alias="updatedAt")
+    academicId: Optional[str] = Field(default=None, validation_alias="studentID")
+    pin: Optional[str] = Field(default=None, validation_alias="pin")
+    academicYears: Optional[List[PyObjectId]] = None
     deleted: bool = False
     type: str = "UNDERGRADUATE"
-    admissionYear: PyObjectId | None = None
-    currentAcademicYear: PyObjectId | None = None
-    classGroup: PyObjectId | None = None
-    image: str | None = None
+    admissionYear: Optional[PyObjectId] = None
+    currentAcademicYear: Optional[PyObjectId] = None
+    classGroup: Optional[PyObjectId] = None
+    image: Optional[str] = None
     
     model_config = ConfigDict(populate_by_name=True)
     
     
 class StudentLogin(BaseModel):
-    academicId: str | None = Field(default=None, validation_alias="academicID")
-    pin: str | None = None
+    academicId: Optional[str] = Field(default=None, validation_alias="academicID")
+    pin: Optional[str] = None

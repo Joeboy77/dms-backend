@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, responses
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.database import get_db
@@ -11,14 +12,14 @@ router = APIRouter(tags=["Academic Years"])
 @router.get("/academic-years", response_model=Page)
 async def get_all_academic_years(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = AcademicYearController(db)
     return await controller.get_all_academic_years(limit=limit, cursor=cursor)
 
 
-@router.get("/academic-years/active", response_model=list[AcademicYearPublic])
+@router.get("/academic-years/active", response_model=List[AcademicYearPublic])
 async def get_active_academic_years(
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):

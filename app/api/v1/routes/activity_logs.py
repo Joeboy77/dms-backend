@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.schemas.activity_logs import Page
@@ -12,9 +13,9 @@ router = APIRouter(tags=["Activity Logs"])
 
 @router.get("/activity_logs")
 async def get_all_logs(
-    limit: int = Query(10, ge=1, le=100),
-    cursor: str | None = None,
-    role: str | None = None,
+    limit: int = Query(5, ge=1, le=100),
+    cursor: Optional[str] = None,
+    role: Optional[str] = None,
     token: TokenData = Depends(get_current_token),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):

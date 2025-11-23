@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token
@@ -13,7 +14,7 @@ router = APIRouter(tags=["Recent Activities"])
 @router.get("/recent-activities", response_model=Page)
 async def get_all_activities(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = RecentActivityController(db)
@@ -64,7 +65,7 @@ async def delete_activity(
     return responses.Response(status_code=204)
 
 
-@router.get("/recent-activities/user/{user_id}", response_model=list[RecentActivityPublic])
+@router.get("/recent-activities/user/{user_id}", response_model=List[RecentActivityPublic])
 async def get_activities_by_user(
     user_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -74,7 +75,7 @@ async def get_activities_by_user(
     return await controller.get_activities_by_user(user_id)
 
 
-@router.get("/recent-activities/recent/{limit}", response_model=list[RecentActivityPublic])
+@router.get("/recent-activities/recent/{limit}", response_model=List[RecentActivityPublic])
 async def get_recent_activities(
     limit: int = 20,
     db: AsyncIOMotorDatabase = Depends(get_db),

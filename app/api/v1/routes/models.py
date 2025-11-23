@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
@@ -15,7 +16,7 @@ router = APIRouter(tags=["Models"])
 @router.get("/models", response_model=Page)
 async def get_all_model_details(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     return await db["models"].find_all(

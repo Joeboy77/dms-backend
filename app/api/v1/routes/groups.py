@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token, RoleBasedAccessControl
@@ -13,7 +14,7 @@ require_coordinator = RoleBasedAccessControl(["projects_coordinator"])
 @router.get("/groups", response_model=Page)
 async def get_all_groups(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: TokenData = Depends(require_coordinator)
 ):
@@ -97,7 +98,7 @@ async def get_group_with_students(
     return await controller.get_group_with_students(id)
 
 
-@router.get("/students/{student_id}/groups", response_model=list[GroupPublic])
+@router.get("/students/{student_id}/groups", response_model=List[GroupPublic])
 async def get_groups_by_student(
     student_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -131,3 +132,18 @@ async def unassign_groups_from_supervisor(
 ):
     controller = GroupController(db)
     return await controller.unassign_groups_from_supervisor(supervisor_id=supervisor_id)
+
+
+@router.get("/groups/{id}/details")
+async def get_group_details(
+    id: str,
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_coordinator)
+):
+    try:
+        controller = GroupController(db)
+        return await controller.get_group_details_with_submissions(id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching group details: {str(e)}")

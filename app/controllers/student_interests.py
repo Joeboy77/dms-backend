@@ -12,7 +12,7 @@ class StudentInterestController:
         self.project_areas_collection = db["project_areas"]
 
 
-    async def get_all_student_interests(self, limit: int = 10, cursor: str | None = None):
+    async def get_all_student_interests(self, limit: int = 10, cursor: Optional[str] = None):
         """Get all student interests with pagination and populated project areas."""
         query = {}
         if cursor:

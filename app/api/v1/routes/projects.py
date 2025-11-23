@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from typing import List
+from typing import List, Optional
 
 from app.core.authentication.auth_middleware import get_current_token
 from app.core.database import get_db
@@ -14,7 +14,7 @@ router = APIRouter(tags=["Projects"])
 @router.get("/projects", response_model=Page)
 async def get_all_projects(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = ProjectController(db)

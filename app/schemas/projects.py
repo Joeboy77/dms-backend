@@ -1,12 +1,13 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
 
 from app.schemas.base import Obj, PyObjectId
 
 
 class Page(BaseModel):
-    items: list["ProjectPublic"]
-    next_cursor: str | None = None
+    items: List["ProjectPublic"]
+    next_cursor: Optional[str] = None
     
     
 class ProjectCreate(BaseModel):
@@ -16,9 +17,9 @@ class ProjectCreate(BaseModel):
     
     
 class ProjectUpdate(BaseModel):
-    title: str | None = None
-    description: str | None = None
-    project_area_id: PyObjectId | None = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    project_area_id: Optional[PyObjectId] = None
     
     
 class ProjectPublic(BaseModel):
@@ -33,11 +34,9 @@ class ProjectPublic(BaseModel):
     
 class ProjectWithDetails(BaseModel):
     project: ProjectPublic
-    project_area: dict | None = None
-    staff: list[dict] = []
+    project_area: Optional[Dict] = None
+    staff: List[Dict] = []
     
     
 class AllProjectsWithDetails(BaseModel):
-    projects: list[ProjectPublic]
-    # project_areas: list[dict] = []
-    # staff: list[dict] = []
+    projects: List[ProjectPublic]

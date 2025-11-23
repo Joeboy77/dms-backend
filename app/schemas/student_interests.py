@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, Field, validator
-from typing import List, Optional
+from typing import List, Optional, Dict, Union
 from enum import Enum
 
 from app.schemas.base import Obj, PyObjectId
@@ -14,8 +14,8 @@ class InterestLevel(str, Enum):
 
 
 class Page(BaseModel):
-    items: list["StudentInterestPublic"]
-    next_cursor: str | None = None
+    items: List["StudentInterestPublic"]
+    next_cursor: Optional[str] = None
 
 
 class PreferenceOption(BaseModel):
@@ -24,9 +24,9 @@ class PreferenceOption(BaseModel):
     project_area_id: str
 
 class StudentPreferenceSchema(BaseModel):
-    student_id: PyObjectId | str
-    academic_year_id: PyObjectId | str
-    preferences: list[PreferenceOption]
+    student_id: Union[PyObjectId, str]
+    academic_year_id: Union[PyObjectId, str]
+    preferences: List[PreferenceOption]
     project_topic: str
 
 
@@ -62,7 +62,6 @@ class StudentInterestUpdate(BaseModel):
 
 class StudentInterestPublic(Obj):
     student: PyObjectId
-    # academicId: str
     academicYear: PyObjectId
     projectAreas: List[ProjectAreaPublic]
     supervisor: Optional[List[PyObjectId]] = None
@@ -75,9 +74,9 @@ class StudentInterestPublic(Obj):
 
 class StudentInterestWithDetails(BaseModel):
     interest: StudentInterestPublic
-    student_details: dict
-    project_area_details: List[dict]
-    academic_year_details: dict
+    student_details: Dict
+    project_area_details: List[Dict]
+    academic_year_details: Dict
 
 class StudentPreferenceUpdate(BaseModel):
     project_area_id: PyObjectId
@@ -87,9 +86,9 @@ class StudentPreferenceUpdate(BaseModel):
 
 
 class SupervisorMatch(BaseModel):
-    project_area: dict
-    supervisor: dict
-    student_preference: Optional[dict] = None
+    project_area: Dict
+    supervisor: Dict
+    student_preference: Optional[Dict] = None
     match_score: float
 
 
@@ -103,22 +102,22 @@ class StudentSupervisorMatches(BaseModel):
 class InterestStatistics(BaseModel):
     total_interests: int
     unique_students: int
-    project_area_popularity: dict
-    interest_level_distribution: dict
-    preference_rank_distribution: dict
-    project_area_titles: dict
+    project_area_popularity: Dict
+    interest_level_distribution: Dict
+    preference_rank_distribution: Dict
+    project_area_titles: Dict
 
 
 class BulkImportResult(BaseModel):
     imported_count: int
     error_count: int
-    errors: List[dict]
+    errors: List[Dict]
 
 
 class StudentInterestAnalytics(BaseModel):
-    most_popular_areas: List[dict]
-    least_popular_areas: List[dict]
+    most_popular_areas: List[Dict]
+    least_popular_areas: List[Dict]
     average_interests_per_student: float
     students_without_interests: int
-    interest_level_trends: dict
-    preference_rank_trends: dict
+    interest_level_trends: Dict
+    preference_rank_trends: Dict

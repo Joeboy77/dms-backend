@@ -1,31 +1,31 @@
 from datetime import datetime
+from typing import Optional, List
 from pydantic import BaseModel, Field
 
 from app.schemas.base import Obj, PyObjectId
 from app.schemas.submissions import SubmissionPublic
 
 
-
 class Page(BaseModel):
-    items: list["DeliverablePublic"]
-    next_cursor: str | None = None
+    items: List["DeliverablePublic"]
+    next_cursor: Optional[str] = None
 
 class DeliverableCreate(BaseModel):
     title: str
     start_date: datetime
     end_date: datetime
-    project_id: PyObjectId  # each deliverable belongs to a project
-    instructions: str | None = None
-    file_path: str | None = None
+    project_id: PyObjectId
+    instructions: Optional[str] = None
+    file_path: Optional[str] = None
 
 class DeliverableUpdate(BaseModel):
-    title: str | None = None
-    start_date: datetime | None = None
-    end_date: datetime | None = None
-    supervisor_id: PyObjectId | None = None
-    project_id: PyObjectId | None = None
-    instructions: str | None = None
-    file_path: str | None = None
+    title: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    supervisor_id: Optional[PyObjectId] = None
+    project_id: Optional[PyObjectId] = None
+    instructions: Optional[str] = None
+    file_path: Optional[str] = None
 
 
 class DeliverablePublic(Obj):
@@ -34,17 +34,11 @@ class DeliverablePublic(Obj):
     end_date: datetime
     supervisor_id: PyObjectId
     project_id: PyObjectId
-    instructions: str | None = None
-    file_path: str | None = None
-    status: str | None = None
-
-    # Which groups need to submit for this deliverable
-    group_ids: list[PyObjectId] | None = None
-
-    # submissions are **computed** in response, not stored in DB
-    submissions: list[SubmissionPublic] | None = None
-
+    instructions: Optional[str] = None
+    file_path: Optional[str] = None
+    status: Optional[str] = None
+    group_ids: Optional[List[PyObjectId]] = None
+    submissions: Optional[List[SubmissionPublic]] = None
     total_submissions: int = 0
-
-    created_at: datetime | None = Field(default=None, validation_alias="createdAt")
-    updated_at: datetime | None = Field(default=None, validation_alias="updatedAt")
+    created_at: Optional[datetime] = Field(default=None, validation_alias="createdAt")
+    updated_at: Optional[datetime] = Field(default=None, validation_alias="updatedAt")

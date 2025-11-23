@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException
@@ -21,7 +22,7 @@ class SubmissionController:
         self.collection = db["submissions"]
         self.submission_files_collection = db["submission_files"]
 
-    async def get_all_submissions(self, limit: int = 10, cursor: str | None = None):
+    async def get_all_submissions(self, limit: int = 10, cursor: Optional[str] = None):
         query = {}
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}

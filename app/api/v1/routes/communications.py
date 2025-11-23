@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, responses, HTTPException
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
 
@@ -29,7 +30,7 @@ class SearchMessagesRequest(BaseModel):
 @router.get("/communications", response_model=Page)
 async def get_all_communications(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = CommunicationController(db)
@@ -75,7 +76,7 @@ async def reply_to_message(
     return await controller.reply_to_message(id, reply_data)
 
 
-@router.get("/communications/user/{participant_id}/{user_type}", response_model=list[CommunicationPublic])
+@router.get("/communications/user/{participant_id}/{user_type}", response_model=List[CommunicationPublic])
 async def get_user_conversations(
     participant_id: str,
     user_type: str,

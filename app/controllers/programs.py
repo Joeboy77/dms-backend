@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from fastapi import HTTPException
@@ -9,7 +10,7 @@ class ProgramController:
         self.db = db
         self.collection = db["programs"]
 
-    async def get_all_programs(self, limit: int = 10, cursor: str | None = None):
+    async def get_all_programs(self, limit: int = 10, cursor: Optional[str] = None):
         query = {}
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}

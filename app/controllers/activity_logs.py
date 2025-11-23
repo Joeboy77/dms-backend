@@ -1,3 +1,4 @@
+from typing import Optional
 from bson import ObjectId
 from fastapi import HTTPException
 
@@ -6,7 +7,7 @@ class ActivityLogController:
         self.db = db
         self.collection = db["activity_logs"]
 
-    async def get_logs(self, token, limit: int = 10, cursor: str | None = None, role: str | None = None):
+    async def get_logs(self, limit: int = 10, cursor: Optional[str] = None, role: Optional[str] = None):
         query = {}
 
         # Pagination cursor
@@ -15,10 +16,8 @@ class ActivityLogController:
 
         logs = await self.collection.find(query).sort("_id", -1).limit(limit).to_list(limit)
 
-        # Transform logs to match expected frontend format
         transformed_logs = []
         for log in logs:
-            # Create a details object that matches the expected schema
             details = {
                 "status": 200,
                 "message": log.get("description", ""),

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List
 from pydantic import BaseModel, Field
 from enum import Enum
 
@@ -13,36 +14,36 @@ class FileStatus(str, Enum):
 
 
 class Page(BaseModel):
-    items: list["SubmissionFilePublic"]
-    next_cursor: str | None = None
+    items: List["SubmissionFilePublic"]
+    next_cursor: Optional[str] = None
 
 
 class SubmissionFileCreate(BaseModel):
     submission_id: PyObjectId
     file_name: str
     file_path: str
-    file_type: str | None = None
-    file_size: int | None = None
-    uploaded_by: PyObjectId  # Student who uploaded this file
-    comments: str | None = None
+    file_type: Optional[str] = None
+    file_size: Optional[int] = None
+    uploaded_by: PyObjectId
+    comments: Optional[str] = None
     status: FileStatus = FileStatus.PENDING_REVIEW
 
 
 class SubmissionFileUpdate(BaseModel):
-    file_name: str | None = None
-    file_path: str | None = None
-    comments: str | None = None
-    status: FileStatus | None = None
+    file_name: Optional[str] = None
+    file_path: Optional[str] = None
+    comments: Optional[str] = None
+    status: Optional[FileStatus] = None
 
 
 class SubmissionFilePublic(Obj):
     submission_id: PyObjectId
     file_name: str
     file_path: str
-    file_type: str | None = None
-    file_size: int | None = None
+    file_type: Optional[str] = None
+    file_size: Optional[int] = None
     uploaded_by: PyObjectId
-    comments: str | None = None
+    comments: Optional[str] = None
     status: FileStatus = FileStatus.PENDING_REVIEW
     uploaded_at: datetime = Field(validation_alias="createdAt")
     updated_at: datetime = Field(validation_alias="updatedAt")

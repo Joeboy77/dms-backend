@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional, List, Dict
 
 from bson import ObjectId
 from fastapi import HTTPException
@@ -10,7 +11,7 @@ class StudentController:
         self.db = db
         self.collection = db["students"]
 
-    async def get_all_students(self, limit: int = 10, cursor: str | None = None):
+    async def get_all_students(self, limit: int = 10, cursor: Optional[str] = None):
         query = {}
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}
@@ -229,22 +230,74 @@ class StudentController:
 
 
 
-    async def assign_students_to_supervisor(self, student_ids: list[str], academic_year_id: str, supervisor_id: str):
-        # Get the checkin record
-        checkin = await self.db["fypcheckins"].find_one({"academicYear": academic_year_id})
+    async def assign_students_to_supervisor(self, student_ids: List[str], academic_year_id: str, supervisor_id: str):
+        academic_year_oid = ObjectId(academic_year_id) if ObjectId.is_valid(academic_year_id) else None
+        if not academic_year_oid:
+            raise HTTPException(status_code=400, detail="Invalid academic year ID format")
+        
+        checkin = await self.db["fypcheckins"].find_one({"academicYear": academic_year_oid})
+        
         if not checkin:
-            raise HTTPException(status_code=404, detail="FYP checkin not found for the academic year")
+            checkin = await self.db["fypcheckins"].find_one({"academicYear": academic_year_id})
+        
+        if not checkin:
+            checkin_data = {
+                "academicYear": academic_year_oid,
+                "checkin": True,
+                "active": True,
+                "createdAt": datetime.utcnow(),
+                "updatedAt": datetime.utcnow()
+            }
+            result = await self.db["fypcheckins"].insert_one(checkin_data)
+            checkin = await self.db["fypcheckins"].find_one({"_id": result.inserted_id})
+            if not checkin:
+                raise HTTPException(
+                    status_code=500, 
+                    detail="Failed to create FYP checkin for the academic year"
+                )
 
         checkin_id = checkin["_id"]
 
-        # Fetch supervisor and linked lecturer
-        supervisor = await self.db["supervisors"].find_one({"_id": ObjectId(supervisor_id)})
-        if not supervisor:
-            raise HTTPException(status_code=404, detail="Supervisor not found")
 
-        lecturer = await self.db["lecturers"].find_one({"_id": ObjectId(supervisor["lecturer_id"])})
+        supervisor = None
+        lecturer = None
+        
+        if not ObjectId.is_valid(supervisor_id):
+            raise HTTPException(status_code=400, detail=f"Invalid supervisor/lecturer ID format: {supervisor_id}")
+        
+        supervisor_oid = ObjectId(supervisor_id)
+        
+        supervisor = await self.db["supervisors"].find_one({"_id": supervisor_oid})
+        
+        if not supervisor:
+            lecturer = await self.db["lecturers"].find_one({"_id": supervisor_oid})
+            if lecturer:
+                supervisor = await self.db["supervisors"].find_one({"lecturer_id": lecturer["_id"]})
+                
+                if not supervisor:
+                    supervisor_data = {
+                        "lecturer_id": lecturer["_id"],
+                        "max_students": lecturer.get("max_students", 5),
+                        "createdAt": datetime.utcnow(),
+                        "updatedAt": datetime.utcnow()
+                    }
+                    result = await self.db["supervisors"].insert_one(supervisor_data)
+                    supervisor = await self.db["supervisors"].find_one({"_id": result.inserted_id})
+                    if not supervisor:
+                        raise HTTPException(
+                            status_code=500, 
+                            detail="Failed to create supervisor record for lecturer"
+                        )
+            else:
+                raise HTTPException(
+                    status_code=404, 
+                    detail=f"Lecturer with ID {supervisor_id} not found. Please ensure the lecturer exists."
+                )
+        
         if not lecturer:
-            raise HTTPException(status_code=404, detail="Lecturer for supervisor not found")
+            lecturer = await self.db["lecturers"].find_one({"_id": ObjectId(supervisor["lecturer_id"])})
+            if not lecturer:
+                raise HTTPException(status_code=404, detail="Lecturer for supervisor not found")
         
         project_area = await self.db["lecturer_project_areas"].find_one({"lecturer": lecturer["_id"]})
         if not project_area:
@@ -271,11 +324,11 @@ class StudentController:
                     assignment_errors.append(f"Student {student_id} already assigned to a supervisor for this academic year")
                     continue
 
-                # Create assignment
+ 
                 fyp_data = {
                     "student": student["_id"],
                     "checkin": checkin_id,
-                    "supervisor": ObjectId(supervisor_id),
+                    "supervisor": lecturer["_id"],  # Use lecturer's _id, not supervisor record's _id
                     "projectArea": project_area["projectAreas"],
                     "createdAt": datetime.utcnow(),
                     "updatedAt": datetime.utcnow()
@@ -330,33 +383,51 @@ class StudentController:
 
 
 
-    async def get_all_students_with_details(self, limit: int = 10, cursor: str | None = None):
+    async def get_all_students_with_details(self, limit: int = 10, cursor: Optional[str] = None, assignment_status: Optional[str] = None):
         query = {"deleted": {"$ne": True}}
         if cursor:
             query["_id"] = {"$gt": ObjectId(cursor)}
 
-        students = await self.collection.find(query).limit(limit).to_list(limit)
+        students = await self.collection.find(query).limit(limit * 2 if assignment_status else limit).to_list(limit * 2 if assignment_status else limit)
 
         detailed_students = []
         for student in students:
-            # Get program details
             program = None
             if student.get("program"):
                 program = await self.db["programs"].find_one({"title": student["program"]})
 
-            # Get student's FYP to find supervisor and project area
-            fyp = await self.db["fyps"].find_one({"student": str(student["_id"])})
+            fyp = await self.db["fyps"].find_one({
+                "$or": [
+                    {"student": str(student["_id"])},
+                    {"student": ObjectId(student["_id"])}
+                ]
+            })
 
             supervisor = None
             project_area = None
 
-            if fyp:
-                # Get supervisor details
-                if fyp.get("supervisor"):
-                    supervisor_lecturer = await self.db["supervisors"].find_one({"_id": ObjectId(fyp["supervisor"])})
-                    lecturer = await self.db["lecturers"].find_one({"_id": supervisor_lecturer["lecturer_id"]})
-                    if supervisor_lecturer:
-                        # Create full name from surname and otherNames
+
+            group = await self.db["groups"].find_one({
+                "$or": [
+                    {"students": {"$in": [student["_id"], ObjectId(student["_id"])]}},
+                    {"members": {"$in": [student["_id"], ObjectId(student["_id"])]}}
+                ],
+                "status": {"$ne": "inactive"}
+            })
+
+            if group and group.get("supervisor"):
+                group_supervisor_id = group["supervisor"]
+                if isinstance(group_supervisor_id, str):
+                    if ObjectId.is_valid(group_supervisor_id):
+                        supervisor_doc = await self.db["supervisors"].find_one({"_id": ObjectId(group_supervisor_id)})
+                    else:
+                        supervisor_doc = None
+                else:
+                    supervisor_doc = await self.db["supervisors"].find_one({"_id": group_supervisor_id})
+                
+                if supervisor_doc:
+                    lecturer = await self.db["lecturers"].find_one({"_id": supervisor_doc["lecturer_id"]})
+                    if lecturer:
                         supervisor_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
                         supervisor = {
                             "supervisor_id": str(lecturer["_id"]),
@@ -370,6 +441,27 @@ class StudentController:
                             "office_hours": lecturer.get("officeHours", ""),
                             "office_location": lecturer.get("officeLocation", "")
                         }
+
+            if fyp and not supervisor:
+                # Get supervisor from FYP if not already found from group
+                if fyp.get("supervisor"):
+                    supervisor_lecturer = await self.db["supervisors"].find_one({"_id": ObjectId(fyp["supervisor"])})
+                    if supervisor_lecturer:
+                        lecturer = await self.db["lecturers"].find_one({"_id": supervisor_lecturer["lecturer_id"]})
+                        if lecturer:
+                            supervisor_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
+                            supervisor = {
+                                "supervisor_id": str(lecturer["_id"]),
+                                "name": supervisor_name,
+                                "email": lecturer.get("email", ""),
+                                "phone": lecturer.get("phone", ""),
+                                "position": lecturer.get("position", ""),
+                                "title": lecturer.get("title", ""),
+                                "bio": lecturer.get("bio", ""),
+                                "academic_id": lecturer.get("academicId", ""),
+                                "office_hours": lecturer.get("officeHours", ""),
+                                "office_location": lecturer.get("officeLocation", "")
+                            }
 
                 # Get project area details
                 if fyp.get("projectArea"):
@@ -445,6 +537,27 @@ class StudentController:
             }
             detailed_students.append(detailed_student)
 
+        if assignment_status and assignment_status != "all":
+            if assignment_status == "assigned":
+                detailed_students = [
+                    s for s in detailed_students 
+                    if s.get("supervisor") 
+                    and s["supervisor"].get("supervisor_id") 
+                    and s["supervisor"].get("supervisor_id") != "N/A"
+                    and s["supervisor"].get("supervisor_id") is not None
+                ]
+            elif assignment_status == "unassigned":
+                detailed_students = [
+                    s for s in detailed_students 
+                    if not s.get("supervisor") 
+                    or not s["supervisor"].get("supervisor_id") 
+                    or s["supervisor"].get("supervisor_id") == "N/A"
+                    or s["supervisor"].get("supervisor_id") is None
+                    or s["supervisor"].get("name") == "N/A"
+                ]
+        
+        detailed_students = detailed_students[:limit]
+
         next_cursor = None
         if len(students) == limit:
             next_cursor = str(students[-1]["_id"])
@@ -452,6 +565,93 @@ class StudentController:
         return {
             "items": detailed_students,
             "next_cursor": next_cursor
+        }
+
+    async def get_student_profile_with_submissions(self, student_id: str):
+        student = None
+        
+        if ObjectId.is_valid(student_id):
+            student = await self.collection.find_one({"_id": ObjectId(student_id), "deleted": {"$ne": True}})
+        
+        if not student:
+            student = await self.collection.find_one({"academicId": student_id, "deleted": {"$ne": True}})
+        
+        if not student:
+            raise HTTPException(status_code=404, detail=f"Student not found: {student_id}")
+        
+        student_name = f"{student.get('surname', '')} {student.get('otherNames', '')}".strip()
+        
+        program_name = "Unknown Program"
+        program_field = student.get("program", "")
+        if program_field:
+            if isinstance(program_field, str) and len(program_field) == 24 and ObjectId.is_valid(program_field):
+                program = await self.db["programs"].find_one({"_id": ObjectId(program_field)})
+                program_name = program.get("title", program.get("name", "Unknown Program")) if program else "Unknown Program"
+            else:
+                program_name = program_field
+        
+        fyp = await self.db["fyps"].find_one({
+            "$or": [
+                {"student": ObjectId(student["_id"])},
+                {"student": str(student["_id"])}
+            ],
+            "deleted": {"$ne": True}
+        })
+        project_topic = fyp.get("project_topic", "") if fyp else ""
+        
+        submissions_data = []
+        
+        if fyp and fyp.get("supervisor"):
+            deliverables = await self.db["deliverables"].find({
+                "supervisor_id": fyp["supervisor"]
+            }).sort("created_at", 1).to_list(length=None)
+            
+            for deliverable in deliverables:
+                deliverable_id = deliverable["_id"]
+                
+                submission = await self.db["submissions"].find_one({
+                    "$or": [
+                        {"student_id": ObjectId(student["_id"])},
+                        {"student_id": str(student["_id"])}
+                    ],
+                    "deliverable_id": deliverable_id
+                })
+                
+                files = []
+                if submission:
+                    files = await self.db["submission_files"].find({
+                        "submission_id": submission["_id"]
+                    }).to_list(length=None)
+                
+                submissions_data.append({
+                    "deliverable_id": str(deliverable_id),
+                    "deliverable_name": deliverable.get("name", deliverable.get("title", "")),
+                    "status": submission.get("status", "not_started") if submission else "not_started",
+                    "submitted_at": submission.get("createdAt") if submission else None,
+                    "files": [
+                        {
+                            "id": str(file["_id"]),
+                            "file_name": file.get("file_name", ""),
+                            "file_path": file.get("file_path", ""),
+                            "file_type": file.get("file_type", ""),
+                            "file_size": file.get("file_size", 0),
+                            "uploaded_at": file.get("createdAt")
+                        }
+                        for file in files
+                    ]
+                })
+        elif fyp:
+            submissions_data = []
+        
+        return {
+            "id": str(student["_id"]),
+            "academic_id": student.get("academicId", ""),
+            "name": student_name,
+            "program": program_name,
+            "image": student.get("image", ""),
+            "email": student.get("email", ""),
+            "project_topic": project_topic,
+            "submissions": submissions_data
         }
 
 

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
 
 from app.schemas.base import Obj, PyObjectId
@@ -18,21 +18,21 @@ class LecturerInfo(BaseModel):
     lecturer_id: PyObjectId
     name: str
     email: str
-    position: str | None = None
-    bio: str | None = None
-    office_hours: str | None = None
-    office_location: str | None = None
+    position: Optional[str] = None
+    bio: Optional[str] = None
+    office_hours: Optional[str] = None
+    office_location: Optional[str] = None
 
 
 class ProjectAreaInfo(BaseModel):
     project_area_id: PyObjectId
     title: str
-    description: str | None = None
-    image: str | None = None
+    description: Optional[str] = None
+    image: Optional[str] = None
     academic_year_id: PyObjectId
     interested_students_count: int
-    created_at: datetime | None = Field(validation_alias="createdAt", default=None)
-    updated_at: datetime | None = Field(validation_alias="updatedAt", default=None)
+    created_at: Optional[datetime] = Field(validation_alias="createdAt", default=None)
+    updated_at: Optional[datetime] = Field(validation_alias="updatedAt", default=None)
 
 
 class SupervisorInterestProfile(BaseModel):
@@ -56,25 +56,25 @@ class RemoveSupervisorInterestRequest(BaseModel):
 class MatchingStudentProjectArea(BaseModel):
     id: PyObjectId
     title: str
-    description: str | None = None
+    description: Optional[str] = None
 
 
 class MatchingStudentPreference(BaseModel):
     rank: int
     level: str
-    notes: str | None = None
+    notes: Optional[str] = None
 
 
 class MatchingStudent(BaseModel):
     student_id: PyObjectId
     student_name: str
-    academic_id: str | None = None
-    email: str | None = None
-    program: str | None = None
+    academic_id: Optional[str] = None
+    email: Optional[str] = None
+    program: Optional[str] = None
     project_area: MatchingStudentProjectArea
     student_preference: MatchingStudentPreference
     match_score: float
-    interest_created_at: datetime | None = Field(validation_alias="interest_created_at", default=None)
+    interest_created_at: Optional[datetime] = Field(validation_alias="interest_created_at", default=None)
 
 
 class SupervisorMatchingStudentsResponse(BaseModel):
@@ -85,9 +85,9 @@ class SupervisorInterestAnalytics(BaseModel):
     total_supervisors: int
     supervisors_with_interests: int
     average_interests_per_supervisor: float
-    most_popular_areas_for_supervisors: List[dict]
-    supervisor_capacity_utilization: dict
-    matching_statistics: dict
+    most_popular_areas_for_supervisors: List[Dict]
+    supervisor_capacity_utilization: Dict
+    matching_statistics: Dict
 
 
 class OptimalMatch(BaseModel):

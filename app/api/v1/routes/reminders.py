@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token
@@ -13,7 +14,7 @@ router = APIRouter(tags=["Reminders"])
 @router.get("/reminders", response_model=Page)
 async def get_all_reminders(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = ReminderController(db)
@@ -64,7 +65,7 @@ async def delete_reminder(
     return responses.Response(status_code=204)
 
 
-@router.get("/reminders/upcoming/{limit}", response_model=list[ReminderPublic])
+@router.get("/reminders/upcoming/{limit}", response_model=List[ReminderPublic])
 async def get_upcoming_reminders(
     limit: int = 10,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -74,7 +75,7 @@ async def get_upcoming_reminders(
     return await controller.get_upcoming_reminders(limit)
 
 
-@router.get("/reminders/past/{limit}", response_model=list[ReminderPublic])
+@router.get("/reminders/past/{limit}", response_model=List[ReminderPublic])
 async def get_past_reminders(
     limit: int = 10,
     db: AsyncIOMotorDatabase = Depends(get_db),

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from typing import List
+from typing import List, Optional
 
 from app.core.authentication.auth_middleware import get_current_token
 from app.core.database import get_db
@@ -14,7 +14,7 @@ router = APIRouter(tags=["Project Areas"])
 @router.get("/project-areas", response_model=Page)
 async def get_all_project_areas(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = ProjectAreaController(db)
@@ -65,7 +65,7 @@ async def delete_project_area(
     return responses.Response(status_code=204)
 
 
-@router.get("/project-areas/search/{title}", response_model=list[ProjectAreaPublic])
+@router.get("/project-areas/search/{title}", response_model=List[ProjectAreaPublic])
 async def search_project_areas_by_title(
     title: str,
     db: AsyncIOMotorDatabase = Depends(get_db),

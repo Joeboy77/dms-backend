@@ -64,14 +64,14 @@ async def login_user(
         roles_list = login.get("roles", []) or []
         if roles_list:
             try:
-                first_role = await db["roles"].find_one({"_id": roles_list[0]})
+                first_role = await db["roles"].find_one({"_id": roles_List[0]})
                 if first_role:
                     role_value = first_role.get("slug") or first_role.get("title") or str(first_role.get("_id"))
-                elif isinstance(roles_list[0], str):
-                    role_value = roles_list[0]
+                elif isinstance(roles_List[0], str):
+                    role_value = roles_List[0]
             except Exception:
-                if isinstance(roles_list[0], str):
-                    role_value = roles_list[0]
+                if isinstance(roles_List[0], str):
+                    role_value = roles_List[0]
 
     # ---- Create JWT ----
     token_data = {

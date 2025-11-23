@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, responses, HTTPException
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
 from bson import ObjectId
@@ -14,25 +15,25 @@ require_supervisor = RoleBasedAccessControl(["projects_supervisor"])
 
 
 class AssignComplaintRequest(BaseModel):
-    assigned_to: list[str]
+    assigned_to: List[str]
 
 
 class AddFeedbackRequest(BaseModel):
     feedback_type: str = "GENERAL"
     message: str
     provided_by: str
-    rating: int | None = None
+    rating: Optional[int] = None
 
 
 class UpdateStatusRequest(BaseModel):
     status: str
-    notes: str | None = None
+    notes: Optional[str] = None
 
 
 @router.get("/complaints", response_model=Page)
 async def get_all_complaints(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = ComplaintController(db)
@@ -57,7 +58,7 @@ async def get_complaint_by_reference(
     return await controller.get_complaints_by_reference(reference)
 
 
-@router.get("/complaints/status/{status}", response_model=list[ComplaintPublic])
+@router.get("/complaints/status/{status}", response_model=List[ComplaintPublic])
 async def get_complaints_by_status(
     status: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -66,7 +67,7 @@ async def get_complaints_by_status(
     return await controller.get_complaints_by_status(status)
 
 
-@router.get("/complaints/category/{category_id}", response_model=list[ComplaintPublic])
+@router.get("/complaints/category/{category_id}", response_model=List[ComplaintPublic])
 async def get_complaints_by_category(
     category_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -153,8 +154,8 @@ async def update_complaint_status(
 @router.get("/supervisor/complaints", response_model=Page)
 async def get_supervisor_complaints(
     limit: int = Query(20, ge=1, le=100),
-    cursor: str | None = None,
-    status: str | None = None,
+    cursor: Optional[str] = None,
+    status: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
     current_user: TokenData = Depends(require_supervisor)
 ):

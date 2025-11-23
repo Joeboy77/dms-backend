@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses, UploadFile, Form, File
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token
@@ -13,7 +14,7 @@ router = APIRouter(tags=["Submissions"])
 @router.get("/submissions", response_model=Page)
 async def get_all_submissions(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = SubmissionController(db)
@@ -68,7 +69,7 @@ async def delete_submission_file(
 async def review_submission(
     submission_id: str,
     approved: bool,
-    feedback: str | None = None,
+    feedback: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
     # current_user: TokenData = Depends(get_current_token),
 ):
@@ -110,7 +111,7 @@ async def delete_submission(
     return responses.Response(status_code=204)
 
 
-@router.get("/submissions/deliverable/{deliverable_id}", response_model=list[SubmissionPublic])
+@router.get("/submissions/deliverable/{deliverable_id}", response_model=List[SubmissionPublic])
 async def get_submissions_by_deliverable(
     deliverable_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -120,7 +121,7 @@ async def get_submissions_by_deliverable(
     return await controller.get_submissions_by_deliverable(deliverable_id)
 
 
-@router.get("/submissions/student/{student_id}", response_model=list[SubmissionPublic])
+@router.get("/submissions/student/{student_id}", response_model=List[SubmissionPublic])
 async def get_submissions_by_student(
     student_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),

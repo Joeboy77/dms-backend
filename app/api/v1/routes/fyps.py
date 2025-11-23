@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, responses
+from typing import Optional, List, Dict
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.authentication.auth_middleware import get_current_token
@@ -13,7 +14,7 @@ router = APIRouter(tags=["FYPs"])
 @router.get("/fyps", response_model=Page)
 async def get_all_fyps(
     limit: int = Query(10, alias="limit", ge=1, le=100),
-    cursor: str | None = None,
+    cursor: Optional[str] = None,
     db: AsyncIOMotorDatabase = Depends(get_db),
 ):
     controller = FypController(db)
@@ -64,7 +65,7 @@ async def delete_fyp(
     return responses.Response(status_code=204)
 
 
-@router.get("/fyps/group/{group_id}", response_model=FypPublicWithProjectArea | None)
+@router.get("/fyps/group/{group_id}", response_model=Optional[FypPublicWithProjectArea])
 async def get_fyp_by_group(
     group_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -74,7 +75,7 @@ async def get_fyp_by_group(
     return await controller.get_fyps_by_group(group_id)
 
 
-@router.get("/fyps/student/{student_id}", response_model=FypPublicWithProjectArea | None)
+@router.get("/fyps/student/{student_id}", response_model=Optional[FypPublicWithProjectArea])
 async def get_fyp_by_student(
     student_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -84,7 +85,7 @@ async def get_fyp_by_student(
     return await controller.get_fyps_by_student(student_id)
 
 
-@router.get("/fyps/supervisor/{supervisor_id}", response_model=list[FypPublic])
+@router.get("/fyps/supervisor/{supervisor_id}", response_model=List[FypPublic])
 async def get_fyps_by_supervisor(
     supervisor_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -94,7 +95,7 @@ async def get_fyps_by_supervisor(
     return await controller.get_fyps_by_supervisor(supervisor_id)
 
 
-@router.get("/fyps/project-area/{project_area_id}", response_model=list[FypPublic])
+@router.get("/fyps/project-area/{project_area_id}", response_model=List[FypPublic])
 async def get_fyps_by_project_area(
     project_area_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
@@ -104,7 +105,7 @@ async def get_fyps_by_project_area(
     return await controller.get_fyps_by_project_area(project_area_id)
 
 
-@router.get("/fyps/checkin/{checkin_id}", response_model=list[FypPublic])
+@router.get("/fyps/checkin/{checkin_id}", response_model=List[FypPublic])
 async def get_fyps_by_checkin(
     checkin_id: str,
     db: AsyncIOMotorDatabase = Depends(get_db),
