@@ -76,16 +76,21 @@ async def get_supervisor_students(
                 member_images = []
                 
                 for member_id in group_member_ids:
-                    member = await db["students"].find_one({"_id": member_id})
-                    if member:
-                        group_members.append({
-                            "id": str(member["_id"]),
-                            "name": f"{member.get('surname', '')} {member.get('otherNames', '')}".strip(),
-                            "academic_id": member.get("academicId", ""),
-                            "image": member.get("image", "")
-                        })
-                        if member.get("image"):
-                            member_images.append(member["image"])
+                    member_doc = await db["students"].find_one({"_id": member_id})
+                    if member_doc:
+                        member_data = {
+                            "id": str(member_doc["_id"]),
+                            "name": f"{member_doc.get('surname', '')} {member_doc.get('otherNames', '')}".strip(),
+                            "academic_id": member_doc.get("academicId", ""),
+                            "image": member_doc.get("image", "")
+                        }
+                        group_members.append(member_data)
+                        if member_doc.get("image"):
+                            member_images.append(member_doc["image"])
+                
+                project_topic_value = group.get("project_topic", "")
+                if isinstance(project_topic_value, ObjectId):
+                    project_topic_value = str(project_topic_value)
                 
                 group_project_status = await get_group_project_status(group_member_ids, db)
                 
@@ -93,7 +98,7 @@ async def get_supervisor_students(
                     "id": str(group["_id"]),
                     "type": "group",
                     "name": group.get("name", ""),
-                    "project_topic": group.get("project_topic", ""),
+                    "project_topic": project_topic_value,
                     "member_count": len(group_members),
                     "member_images": member_images,  # For overlapping display
                     "members": group_members,

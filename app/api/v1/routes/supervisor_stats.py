@@ -33,26 +33,27 @@ async def get_supervisor_recent_activities(
         
         supervisor_id = supervisor["_id"]
         
-        # Get students assigned to this supervisor
         students_under_supervisor = await db["fyps"].find(
-            {"supervisor_id": supervisor_id},
-            {"student_id": 1}
+            {"supervisor": supervisor_id}
         ).to_list(length=None)
         
-        student_ids = [fyp["student_id"] for fyp in students_under_supervisor]
+        student_ids = [fyp["student"] for fyp in students_under_supervisor]
         
-        # Get supervisor's own activity logs (if any)
         supervisor_activities = await db["activity_logs"].find(
             {"user_name": supervisor_academic_id},
             {"_id": 1, "description": 1, "timestamp": 1, "type": 1, "user_name": 1}
         ).sort("timestamp", -1).limit(limit * 2).to_list(length=limit * 2)
         
         # Get submissions from students under this supervisor
+        # Check both student_id and student fields for compatibility
         recent_submissions = []
         if student_ids:
             recent_submissions = await db["submissions"].find(
-                {"student_id": {"$in": student_ids}},
-                {"_id": 1, "createdAt": 1, "status": 1, "group_id": 1, "deliverable_id": 1, "student_id": 1}
+                {"$or": [
+                    {"student_id": {"$in": student_ids}},
+                    {"student": {"$in": student_ids}}
+                ]},
+                {"_id": 1, "createdAt": 1, "status": 1, "group_id": 1, "deliverable_id": 1, "student_id": 1, "student": 1}
             ).sort("createdAt", -1).limit(limit * 2).to_list(length=limit * 2)
         
         # Format supervisor activities
@@ -70,17 +71,25 @@ async def get_supervisor_recent_activities(
         # Format student submissions with student and deliverable details
         formatted_student_activities = []
         for submission in recent_submissions:
+            # Get student ID (check both fields)
+            student_id = submission.get("student_id") or submission.get("student")
+            
             # Get student details
-            student = await db["students"].find_one({"_id": submission.get("student_id")})
+            student = None
+            if student_id:
+                student = await db["students"].find_one({"_id": student_id})
             student_name = "Unknown Student"
             if student:
                 student_name = f"{student.get('surname', '')} {student.get('otherNames', '')}".strip()
             
             # Get deliverable details
-            deliverable = await db["deliverables"].find_one({"_id": submission.get("deliverable_id")})
+            deliverable_id = submission.get("deliverable_id")
+            deliverable = None
+            if deliverable_id:
+                deliverable = await db["deliverables"].find_one({"_id": deliverable_id})
             deliverable_name = "Unknown Deliverable"
             if deliverable:
-                deliverable_name = deliverable.get("title", "Unknown Deliverable")
+                deliverable_name = deliverable.get("name") or deliverable.get("title", "Unknown Deliverable")
             
             # Get group details if applicable
             group_name = ""

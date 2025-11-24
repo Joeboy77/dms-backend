@@ -4,6 +4,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
 
 from app.core.database import get_db
+from app.core.authentication.auth_middleware import get_current_token
 from app.schemas.communications import (
     CommunicationCreate,
     CommunicationPublic,

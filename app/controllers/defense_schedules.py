@@ -586,6 +586,54 @@ class DefenseScheduleController:
         
         return markers
 
+    async def get_schedules_for_supervisor(self, supervisor_id: ObjectId, academic_year_id: Optional[str] = None):
+        """
+        Get all defense schedules for students/groups supervised by a specific supervisor.
+        """
+        students_under_supervisor = await self.db["fyps"].find(
+            {"supervisor": supervisor_id}
+        ).to_list(length=None)
+        
+        student_ids = [fyp["student"] for fyp in students_under_supervisor]
+        # Convert student_ids to ObjectId if needed
+        student_ids_obj = [ObjectId(sid) if not isinstance(sid, ObjectId) else sid for sid in student_ids]
+        
+        supervisor_groups = await self.db["groups"].find(
+            {"supervisor_id": supervisor_id, "status": "active"}
+        ).to_list(length=None)
+        
+        group_ids = [group["_id"] for group in supervisor_groups]
+        # Convert group_ids to ObjectId if needed
+        group_ids_obj = [ObjectId(gid) if not isinstance(gid, ObjectId) else gid for gid in group_ids]
+        
+        query = {
+            "$or": []
+        }
+        
+        if student_ids_obj:
+            query["$or"].append({"student_ids": {"$in": student_ids_obj}})
+            query["$or"].append({"time_slots.student_id": {"$in": student_ids_obj}})
+        
+        if group_ids_obj:
+            query["$or"].append({"group_ids": {"$in": group_ids_obj}})
+            query["$or"].append({"time_slots.group_id": {"$in": group_ids_obj}})
+        
+        if not query["$or"]:
+            return []
+        
+        if academic_year_id:
+            query["academic_year_id"] = ObjectId(academic_year_id) if isinstance(academic_year_id, str) else academic_year_id
+        
+        query["status"] = {"$in": ["scheduled", "in_progress"]}
+        
+        schedules = await self.collection.find(query).sort([("defense_date", 1), ("time_slots.start_time", 1)]).to_list(None)
+        
+        enriched_schedules = []
+        for schedule in schedules:
+            enriched_schedules.append(await self._enrich_schedule(schedule))
+        
+        return enriched_schedules
+
     async def update_schedule(self, schedule_id: str, update_data: dict, updated_by: str):
         schedule = await self.collection.find_one({"_id": ObjectId(schedule_id)})
         if not schedule:

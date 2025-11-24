@@ -21,6 +21,7 @@ from app.controllers.defense_schedules import DefensePanelController, DefenseSch
 router = APIRouter(tags=["Defense Schedules"])
 
 require_coordinator = RoleBasedAccessControl(["projects_coordinator"])
+require_supervisor = RoleBasedAccessControl(["projects_supervisor", "projects_coordinator"])
 
 
 @router.post("/defense-panels", response_model=DefensePanelPublic)
@@ -166,4 +167,27 @@ async def cancel_schedule(
 ):
     controller = DefenseScheduleController(db)
     return await controller.cancel_schedule(schedule_id, current_user.email)
+
+
+@router.get("/defense-schedules/supervisor/my-schedules", response_model=List[DefenseSchedulePublic])
+async def get_supervisor_defense_schedules(
+    academic_year_id: Optional[str] = Query(None),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user: TokenData = Depends(require_supervisor)
+):
+    """
+    Get all defense schedules for students/groups supervised by the current supervisor.
+    """
+    from bson import ObjectId
+    
+    # Get supervisor by email (academicId)
+    supervisor = await db["lecturers"].find_one({"academicId": current_user.email})
+    if not supervisor:
+        raise HTTPException(status_code=404, detail="Supervisor not found")
+    
+    supervisor_id = supervisor["_id"]
+    controller = DefenseScheduleController(db)
+    schedules = await controller.get_schedules_for_supervisor(supervisor_id, academic_year_id)
+    
+    return schedules
 
