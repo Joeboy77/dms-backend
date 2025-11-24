@@ -37,7 +37,7 @@ class LecturerProjectAreaController:
         if "lecturer" in lpa_data and isinstance(lpa_data["lecturer"], str):
             lpa_data["lecturer"] = ObjectId(lpa_data["lecturer"])
         if "academicYear" in lpa_data and isinstance(lpa_data["academicYear"], str):
-            lpa_data["academicYear"] = lpa_data["academicYear"]
+            lpa_data["academicYear"] = ObjectId(lpa_data["academicYear"])
         if "projectAreas" in lpa_data:
             lpa_data["projectAreas"] = [
                 ObjectId(pa_id) if isinstance(pa_id, str) else pa_id
@@ -91,7 +91,42 @@ class LecturerProjectAreaController:
 
     async def get_by_lecturer(self, lecturer_id: str):
         lpas = await self.collection.find({"lecturer": ObjectId(lecturer_id)}).to_list(None)
-        return lpas
+        
+        enriched_lpas = []
+        for lpa in lpas:
+            project_areas_details = []
+            for pa_id in lpa.get("projectAreas", []):
+                pa = await self.db["project_areas"].find_one({"_id": pa_id})
+                if pa:
+                    project_areas_details.append({
+                        "_id": str(pa["_id"]),
+                        "title": pa.get("title", ""),
+                        "description": pa.get("description", ""),
+                        "image": pa.get("image", "")
+                    })
+            
+            academic_year = None
+            if lpa.get("academicYear"):
+                ay = await self.db["academic_years"].find_one({"_id": lpa["academicYear"]})
+                if ay:
+                    academic_year = {
+                        "_id": str(ay["_id"]),
+                        "title": ay.get("title", ""),
+                        "year": ay.get("year", "")
+                    }
+            
+            enriched_lpa = {
+                **lpa,
+                "_id": str(lpa["_id"]),
+                "lecturer": str(lpa["lecturer"]),
+                "academicYear": str(lpa.get("academicYear", "")),
+                "projectAreas": [str(pa_id) for pa_id in lpa.get("projectAreas", [])],
+                "projectAreasDetails": project_areas_details,
+                "academicYearDetails": academic_year
+            }
+            enriched_lpas.append(enriched_lpa)
+        
+        return enriched_lpas
 
     async def get_by_academic_year(self, academic_year_id: str):
         lpas = await self.collection.find({"academicYear": ObjectId(academic_year_id)}).to_list(None)

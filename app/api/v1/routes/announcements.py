@@ -21,6 +21,8 @@ import cloudinary.uploader
 router = APIRouter(tags=["Announcements"])
 
 require_supervisor = RoleBasedAccessControl(["projects_supervisor"])
+require_coordinator = RoleBasedAccessControl(["projects_coordinator"])
+require_supervisor_or_coordinator = RoleBasedAccessControl(["projects_supervisor", "projects_coordinator"])
 require_student = RoleBasedAccessControl(["student"])
 
 
@@ -127,7 +129,7 @@ async def delete_announcement(
 async def upload_announcement_files(
     files: List[UploadFile] = File(...),
     db: AsyncIOMotorDatabase = Depends(get_db),
-    current_user: TokenData = Depends(require_supervisor)
+    current_user: TokenData = Depends(require_supervisor_or_coordinator)
 ):
     """
     Upload files for announcements (images, documents).
@@ -137,11 +139,11 @@ async def upload_announcement_files(
         if not files:
             raise HTTPException(status_code=400, detail="No files provided")
         
-        supervisor = await db["lecturers"].find_one({"academicId": current_user.email})
-        if not supervisor:
-            raise HTTPException(status_code=404, detail="Supervisor not found")
+        lecturer = await db["lecturers"].find_one({"academicId": current_user.email})
+        if not lecturer:
+            raise HTTPException(status_code=404, detail="Lecturer not found")
         
-        supervisor_academic_id = current_user.email
+        lecturer_academic_id = current_user.email
         
         # Configure Cloudinary
         cloudinary.config(
@@ -170,7 +172,7 @@ async def upload_announcement_files(
                     file.file,
                     folder="announcements",
                     resource_type=resource_type,
-                    public_id=f"{supervisor_academic_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename.rsplit('.', 1)[0]}"
+                    public_id=f"{lecturer_academic_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename.rsplit('.', 1)[0]}"
                 )
                 
                 uploaded_urls.append(upload_result["secure_url"])

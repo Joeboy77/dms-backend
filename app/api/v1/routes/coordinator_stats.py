@@ -44,15 +44,14 @@ async def get_student_statistics(
                 group_supervisor_id = group["supervisor"]
                 if isinstance(group_supervisor_id, str):
                     if ObjectId.is_valid(group_supervisor_id):
-                        supervisor = await db["supervisors"].find_one({"_id": ObjectId(group_supervisor_id)})
+                        lecturer = await db["lecturers"].find_one({"_id": ObjectId(group_supervisor_id)})
                     else:
-                        supervisor = None
+                        lecturer = None
                 else:
-                    supervisor = await db["supervisors"].find_one({"_id": group_supervisor_id})
-                if supervisor:
+                    lecturer = await db["lecturers"].find_one({"_id": group_supervisor_id})
+                if lecturer:
                     is_assigned = True
             
-            # If not assigned via group, check individual FYP assignment
             if not is_assigned:
                 fyp = await db["fyps"].find_one({
                     "$or": [
@@ -61,8 +60,15 @@ async def get_student_statistics(
                     ]
                 })
                 if fyp and fyp.get("supervisor"):
-                    supervisor = await db["supervisors"].find_one({"_id": ObjectId(fyp["supervisor"])})
-                    if supervisor:
+                    supervisor_id = fyp["supervisor"]
+                    if isinstance(supervisor_id, str):
+                        if ObjectId.is_valid(supervisor_id):
+                            lecturer = await db["lecturers"].find_one({"_id": ObjectId(supervisor_id)})
+                        else:
+                            lecturer = None
+                    else:
+                        lecturer = await db["lecturers"].find_one({"_id": supervisor_id})
+                    if lecturer:
                         is_assigned = True
             
             if is_assigned:

@@ -10,10 +10,12 @@ from app.api.v1.routes import (
     coordinator_project_areas,
     coordinator_logs,
     database,
+    defense_schedules,
     deliverables,
     fypcheckins,
     fyps,
     groups,
+    general,
     health,
     lecturer_project_areas,
     lecturers,
@@ -57,6 +59,7 @@ app.add_middleware(
 )
 
 app.include_router(health.router)
+app.include_router(general.router, prefix=settings.API_V1_STR)
 app.include_router(models.router, prefix=settings.API_V1_STR)
 app.include_router(academic_years.router, prefix=settings.API_V1_STR)
 app.include_router(database.router, prefix=settings.API_V1_STR)
@@ -84,6 +87,7 @@ app.include_router(enhanced_supervisor_interests.router, prefix=settings.API_V1_
 app.include_router(coordinator_stats.router, prefix=settings.API_V1_STR)
 app.include_router(coordinator_project_areas.router, prefix=settings.API_V1_STR)
 app.include_router(coordinator_logs.router, prefix=settings.API_V1_STR)
+app.include_router(defense_schedules.router, prefix=settings.API_V1_STR)
 app.include_router(supervisor_stats.router, prefix=settings.API_V1_STR)
 app.include_router(supervisor_reminders.router, prefix=settings.API_V1_STR)
 app.include_router(supervisor_students.router, prefix=settings.API_V1_STR)

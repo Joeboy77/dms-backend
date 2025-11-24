@@ -281,6 +281,22 @@ class CommunicationController:
                         "type": student.get("type", "UNDERGRADUATE")
                     })
 
+        elif user_type.lower() == "projects_coordinator" or user_type.lower() == "coordinator":
+            lecturers = await self.db["lecturers"].find({}).to_list(None)
+            
+            for lecturer in lecturers:
+                lecturer_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
+                contacts.append({
+                    "participantId": str(lecturer["_id"]),
+                    "userType": "projects_supervisor",
+                    "email": lecturer.get("email", ""),
+                    "name": lecturer_name,
+                    "title": lecturer.get("title", ""),
+                    "position": lecturer.get("position", ""),
+                    "relationship": "supervisor",
+                    "academic_id": lecturer.get("academicId", "")
+                })
+
         elif user_type.lower() == "admin":
             # For admins: they can communicate with everyone (optional implementation)
             # You might want to limit this or implement different logic

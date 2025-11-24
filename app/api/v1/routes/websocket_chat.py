@@ -63,14 +63,14 @@ async def get_user_info(db: AsyncIOMotorDatabase, user_id: str, user_type: str) 
                     "academic_id": user.get("academicId", ""),
                     "image": user.get("image", "")
                 }
-        elif user_type in ["projects_supervisor", "lecturer"]:
+        elif user_type in ["projects_supervisor", "lecturer", "projects_coordinator", "coordinator"]:
             user = await db["lecturers"].find_one({"_id": ObjectId(user_id)})
             if user:
                 return {
                     "id": str(user["_id"]),
                     "name": f"{user.get('surname', '')} {user.get('otherNames', '')}".strip(),
                     "email": user.get("email", ""),
-                    "type": "supervisor",
+                    "type": "projects_coordinator" if user_type in ["projects_coordinator", "coordinator"] else "supervisor",
                     "academic_id": user.get("academicId", ""),
                     "image": user.get("image", "")
                 }
@@ -83,26 +83,37 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str = Qu
     """WebSocket endpoint for real-time chat"""
     logger.info(f"WebSocket connection attempt: user_id={user_id}, token={token[:20]}...")
     
-    # Authenticate the connection
     token_data = await authenticate_websocket(websocket, token)
     if not token_data:
         logger.error("WebSocket authentication failed")
         return
     
-    logger.info(f"WebSocket authentication successful: role={token_data.role}")
+    logger.info(f"WebSocket authentication successful: role={token_data.role}, id={token_data.id}")
     
-    # Get user info from database
+    actual_user_id = token_data.id if token_data.id else user_id
+    
     from app.core.database import db
-    user_info = await get_user_info(db, user_id, token_data.role)
+    
+    role_mapping = {
+        "STUDENT": "student",
+        "PROJECT_SUPERVISOR": "projects_supervisor",
+        "LECTURER": "projects_supervisor",
+        "PROJECT_COORDINATOR": "projects_coordinator",
+        "projects_coordinator": "projects_coordinator",
+        "coordinator": "projects_coordinator"
+    }
+    user_type = role_mapping.get(token_data.role, token_data.role.lower())
+    
+    user_info = await get_user_info(db, actual_user_id, user_type)
     if not user_info:
-        logger.error(f"User not found: user_id={user_id}, role={token_data.role}")
+        logger.error(f"User not found: user_id={actual_user_id}, role={token_data.role}, user_type={user_type}")
         await websocket.close(code=1008, reason="User not found")
         return
     
     # Connect the user
-    logger.info(f"Connecting user to WebSocket manager: user_id={user_id}")
-    await manager.connect(websocket, user_id, user_info)
-    logger.info(f"User connected successfully: user_id={user_id}")
+    logger.info(f"Connecting user to WebSocket manager: user_id={actual_user_id}")
+    await manager.connect(websocket, actual_user_id, user_info)
+    logger.info(f"User connected successfully: user_id={actual_user_id}")
     
     try:
         while True:
@@ -113,21 +124,21 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str, token: str = Qu
             message_type = message_data.get("type", "message")
             
             if message_type == "message":
-                await handle_chat_message(db, user_id, user_info, message_data)
+                await handle_chat_message(db, actual_user_id, user_info, message_data)
             elif message_type == "join_group":
-                await handle_join_group(user_id, message_data)
+                await handle_join_group(actual_user_id, message_data)
             elif message_type == "leave_group":
-                await handle_leave_group(user_id, message_data)
+                await handle_leave_group(actual_user_id, message_data)
             elif message_type == "typing":
-                await handle_typing_indicator(user_id, message_data)
+                await handle_typing_indicator(actual_user_id, message_data)
             elif message_type == "ping":
-                await manager.send_personal_message({"type": "pong"}, user_id)
+                await manager.send_personal_message({"type": "pong"}, actual_user_id)
                 
     except WebSocketDisconnect:
-        manager.disconnect(user_id)
+        manager.disconnect(actual_user_id)
     except Exception as e:
-        logger.error(f"WebSocket error for user {user_id}: {e}")
-        manager.disconnect(user_id)
+        logger.error(f"WebSocket error for user {actual_user_id}: {e}")
+        manager.disconnect(actual_user_id)
 
 async def handle_chat_message(db: AsyncIOMotorDatabase, sender_id: str, sender_info: dict, message_data: dict):
     """Handle incoming chat messages"""

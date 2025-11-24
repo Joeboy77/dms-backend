@@ -155,7 +155,9 @@ async def assign_students_to_supervisor(
     return await controller.assign_students_to_supervisor(
         student_ids=student_ids,
         academic_year_id=academic_year_id,
-        supervisor_id=supervisor_id
+        supervisor_id=supervisor_id,
+        coordinator_id=current_user.id,
+        coordinator_email=current_user.email
     )
 
 

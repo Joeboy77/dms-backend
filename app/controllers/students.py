@@ -230,7 +230,7 @@ class StudentController:
 
 
 
-    async def assign_students_to_supervisor(self, student_ids: List[str], academic_year_id: str, supervisor_id: str):
+    async def assign_students_to_supervisor(self, student_ids: List[str], academic_year_id: str, supervisor_id: str, coordinator_id: Optional[str] = None, coordinator_email: Optional[str] = None):
         academic_year_oid = ObjectId(academic_year_id) if ObjectId.is_valid(academic_year_id) else None
         if not academic_year_oid:
             raise HTTPException(status_code=400, detail="Invalid academic year ID format")
@@ -325,11 +325,18 @@ class StudentController:
                     continue
 
  
+                project_area_id = None
+                if project_area.get("projectAreas") and len(project_area["projectAreas"]) > 0:
+                    if isinstance(project_area["projectAreas"], list):
+                        project_area_id = project_area["projectAreas"][0]
+                    else:
+                        project_area_id = project_area["projectAreas"]
+
                 fyp_data = {
                     "student": student["_id"],
                     "checkin": checkin_id,
-                    "supervisor": lecturer["_id"],  # Use lecturer's _id, not supervisor record's _id
-                    "projectArea": project_area["projectAreas"],
+                    "supervisor": lecturer["_id"],
+                    "projectArea": project_area_id,
                     "createdAt": datetime.utcnow(),
                     "updatedAt": datetime.utcnow()
                 }
@@ -353,18 +360,27 @@ class StudentController:
         # Log activity after all assignments
         if created_assignments:
             try:
+                coordinator_name = coordinator_email or "Coordinator"
+                if coordinator_email:
+                    coordinator_lecturer = await self.db["lecturers"].find_one({"academicId": coordinator_email})
+                    if coordinator_lecturer:
+                        coordinator_name = f"{coordinator_lecturer.get('title', '')} {coordinator_lecturer.get('surname', '')} {coordinator_lecturer.get('otherNames', '')}".strip()
+                
                 await self.db["activity_logs"].insert_one({
-                    "description": f"Assigned {len(created_assignments)} student(s) to Supervisor {lecturer.get('title', '')} {lecturer.get('surname', '')} {lecturer.get('otherNames', '')}.",
+                    "description": f"Coordinator {coordinator_name} assigned {len(created_assignments)} student(s) to Supervisor {lecturer.get('title', '')} {lecturer.get('surname', '')} {lecturer.get('otherNames', '')}.",
                     "action": "student_assignment",
-                    "user_name": lecturer.get("academicId"),
-                    "user_id": str(supervisor["_id"]),
-                    "type": "assignment",
+                    "user_name": coordinator_email or coordinator_name,
+                    "user_id": coordinator_id or str(supervisor["_id"]),
+                    "type": "coordinator_action",
                     "timestamp": datetime.utcnow(),
                     "createdAt": datetime.utcnow(),
                     "updatedAt": datetime.utcnow(),
                     "details": {
+                        "message": f"Assigned {len(created_assignments)} student(s) to Supervisor {lecturer.get('title', '')} {lecturer.get('surname', '')} {lecturer.get('otherNames', '')}.",
+                        "status": "success",
                         "student_count": len(created_assignments),
                         "supervisor_name": f"{lecturer.get('title', '')} {lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip(),
+                        "supervisor_id": str(lecturer["_id"]),
                         "project_area": None,
                         "assigned_students": student_ids
                     }
@@ -445,34 +461,57 @@ class StudentController:
             if fyp and not supervisor:
                 # Get supervisor from FYP if not already found from group
                 if fyp.get("supervisor"):
-                    supervisor_lecturer = await self.db["supervisors"].find_one({"_id": ObjectId(fyp["supervisor"])})
-                    if supervisor_lecturer:
-                        lecturer = await self.db["lecturers"].find_one({"_id": supervisor_lecturer["lecturer_id"]})
-                        if lecturer:
-                            supervisor_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
-                            supervisor = {
-                                "supervisor_id": str(lecturer["_id"]),
-                                "name": supervisor_name,
-                                "email": lecturer.get("email", ""),
-                                "phone": lecturer.get("phone", ""),
-                                "position": lecturer.get("position", ""),
-                                "title": lecturer.get("title", ""),
-                                "bio": lecturer.get("bio", ""),
-                                "academic_id": lecturer.get("academicId", ""),
-                                "office_hours": lecturer.get("officeHours", ""),
-                                "office_location": lecturer.get("officeLocation", "")
-                            }
+                    supervisor_id = fyp["supervisor"]
+                    if isinstance(supervisor_id, str):
+                        if ObjectId.is_valid(supervisor_id):
+                            lecturer = await self.db["lecturers"].find_one({"_id": ObjectId(supervisor_id)})
+                        else:
+                            lecturer = None
+                    else:
+                        lecturer = await self.db["lecturers"].find_one({"_id": supervisor_id})
+                    
+                    if lecturer:
+                        supervisor_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
+                        supervisor = {
+                            "supervisor_id": str(lecturer["_id"]),
+                            "name": supervisor_name,
+                            "email": lecturer.get("email", ""),
+                            "phone": lecturer.get("phone", ""),
+                            "position": lecturer.get("position", ""),
+                            "title": lecturer.get("title", ""),
+                            "bio": lecturer.get("bio", ""),
+                            "academic_id": lecturer.get("academicId", ""),
+                            "office_hours": lecturer.get("officeHours", ""),
+                            "office_location": lecturer.get("officeLocation", "")
+                        }
 
                 # Get project area details
                 if fyp.get("projectArea"):
-                    project_area_doc = await self.db["project_areas"].find_one({"_id": ObjectId(fyp["projectArea"])})
-                    if project_area_doc:
-                        project_area = {
-                            "project_area_id": str(project_area_doc["_id"]),
-                            "title": project_area_doc.get("title", ""),
-                            "description": project_area_doc.get("description", ""),
-                            "image": project_area_doc.get("image", "")
-                        }
+                    project_area_value = fyp["projectArea"]
+                    project_area_id = None
+                    
+                    if isinstance(project_area_value, list):
+                        if len(project_area_value) > 0:
+                            project_area_id = project_area_value[0]
+                    elif project_area_value:
+                        project_area_id = project_area_value
+                    
+                    if project_area_id:
+                        if isinstance(project_area_id, str):
+                            if ObjectId.is_valid(project_area_id):
+                                project_area_doc = await self.db["project_areas"].find_one({"_id": ObjectId(project_area_id)})
+                            else:
+                                project_area_doc = None
+                        else:
+                            project_area_doc = await self.db["project_areas"].find_one({"_id": project_area_id})
+                        
+                        if project_area_doc:
+                            project_area = {
+                                "project_area_id": str(project_area_doc["_id"]),
+                                "title": project_area_doc.get("title", ""),
+                                "description": project_area_doc.get("description", ""),
+                                "image": project_area_doc.get("image", "")
+                            }
 
             # Format student name
             student_name = f"{student.get('surname', '')} {student.get('otherNames', '')}".strip()

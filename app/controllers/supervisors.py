@@ -191,44 +191,98 @@ class SupervisorController:
             "lecturer": lecturer
         }
 
-    async def get_all_supervisors_with_lecturer_details(self, limit: int = 10, cursor: Optional[str] = None):
-        query = {}
+    async def get_all_supervisors_with_lecturer_details(self, limit: int = 10, cursor: Optional[str] = None, academic_year: Optional[str] = None):
+        lecturers_query = {}
         if cursor:
-            query["_id"] = {"$gt": ObjectId(cursor)}
+            try:
+                lecturers_query["_id"] = {"$gt": ObjectId(cursor)}
+            except Exception:
+                pass
 
-        supervisors_docs = await self.collection.find(query).limit(limit).to_list(limit)
+        lecturers = await self.db["lecturers"].find(lecturers_query).limit(limit).to_list(limit)
+
+        checkin_id = None
+        if academic_year:
+            academic_year_doc = await self.db["academic_years"].find_one({"title": academic_year})
+            if academic_year_doc:
+                checkin = await self.db["fypcheckins"].find_one({"academicYear": academic_year_doc["_id"]})
+                if checkin:
+                    checkin_id = checkin["_id"]
 
         supervisors_with_details = []
-        for doc in supervisors_docs:
-            lecturer = await self.db["lecturers"].find_one({"_id": doc.get("lecturer_id")})
-            if not lecturer:
-                continue
+        for lecturer in lecturers:
+            lecturer_id = lecturer["_id"]
             
-            student_count = await self.db["fyps"].count_documents({"supervisor": doc.get("_id")})
+            supervisor_doc = await self.collection.find_one({"lecturer_id": lecturer_id})
+            
             lecturer_name = f"{lecturer.get('surname', '')} {lecturer.get('otherNames', '')}".strip()
+            
+            fyp_query = {
+                "$or": [
+                    {"supervisor": lecturer_id},
+                    {"supervisor": str(lecturer_id)}
+                ]
+            }
+            if checkin_id:
+                fyp_query["checkin"] = checkin_id
+            
+            student_count_fyps = await self.db["fyps"].count_documents(fyp_query)
+            
+            groups = await self.db["groups"].find({
+                "$or": [
+                    {"supervisor": lecturer_id},
+                    {"supervisor": str(lecturer_id)}
+                ],
+                "status": {"$ne": "inactive"}
+            }).to_list(None)
+            
+            student_count_groups = 0
+            for group in groups:
+                members = group.get("members", []) or group.get("students", [])
+                if members:
+                    student_count_groups += len(members)
+            
+            total_student_count = student_count_fyps + student_count_groups
+            
+            project_area = None
+            lpa = await self.db["lecturer_project_areas"].find_one({"lecturer": lecturer_id})
+            if lpa and lpa.get("projectAreas") and len(lpa["projectAreas"]) > 0:
+                project_area_id = lpa["projectAreas"][0]
+                if isinstance(project_area_id, list):
+                    project_area_id = project_area_id[0] if project_area_id else None
+                
+                if project_area_id:
+                    pa_doc = await self.db["project_areas"].find_one({"_id": project_area_id})
+                    if pa_doc:
+                        project_area = pa_doc.get("title", "")
+
+            supervisor_id = str(supervisor_doc["_id"]) if supervisor_doc else None
 
             supervisor_with_details = {
-                "_id": str(doc["_id"]),
-                "lecturer_id": str(lecturer["_id"]),
-                "max_students": doc.get("max_students", lecturer.get("max_students")),
-                "project_student_count": student_count,
-                "createdAt": doc.get("createdAt", lecturer.get("createdAt")),
-                "updatedAt": doc.get("updatedAt", lecturer.get("updatedAt")),
+                "_id": supervisor_id or str(lecturer_id),
+                "lecturer_id": str(lecturer_id),
+                "max_students": supervisor_doc.get("max_students", lecturer.get("max_students", 5)) if supervisor_doc else lecturer.get("max_students", 5),
+                "project_student_count": total_student_count,
+                "createdAt": supervisor_doc.get("createdAt", lecturer.get("createdAt")) if supervisor_doc else lecturer.get("createdAt"),
+                "updatedAt": supervisor_doc.get("updatedAt", lecturer.get("updatedAt")) if supervisor_doc else lecturer.get("updatedAt"),
                 "lecturer_name": lecturer_name,
                 "lecturer_email": lecturer.get("email", ""),
                 "lecturer_phone": lecturer.get("phone"),
                 "lecturer_position": lecturer.get("position"),
-                "lecturer_title": lecturer.get("title"),
+                "lecturer_title": lecturer.get("title", ""),
                 "lecturer_bio": lecturer.get("bio"),
                 "lecturer_office_hours": lecturer.get("officeHours"),
                 "lecturer_office_location": lecturer.get("officeLocation"),
-                "academic_id": lecturer.get("academicId", "")
+                "lecturer_image": lecturer.get("image"),
+                "academic_id": lecturer.get("academicId", ""),
+                "lecturer_department": lecturer.get("department", "Computer Science"),
+                "lecturer_specialization": project_area or lecturer.get("specialization", "")
             }
             supervisors_with_details.append(supervisor_with_details)
 
         next_cursor = None
-        if len(supervisors_docs) == limit:
-            next_cursor = str(supervisors_docs[-1]["_id"])
+        if len(lecturers) == limit:
+            next_cursor = str(lecturers[-1]["_id"])
 
         return {
             "items": supervisors_with_details,
