@@ -54,7 +54,6 @@ class CommunicationController:
         return created_message
 
     async def reply_to_message(self, communication_id: str, reply_data: dict):
-        # Add reply metadata
         reply_data["_id"] = ObjectId()
         reply_data["createdAt"] = datetime.now()
         reply_data["updatedAt"] = datetime.now()
