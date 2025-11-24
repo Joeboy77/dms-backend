@@ -49,12 +49,31 @@ async def get_communication(
 @router.post("/communications/send", response_model=CommunicationPublic)
 async def send_message(
     message_request: SendMessageRequest,
-    sender: Participant,
     db: AsyncIOMotorDatabase = Depends(get_db),
+    current_user = Depends(get_current_token),
 ):
+    from bson import ObjectId
+    
     controller = CommunicationController(db)
+    
+    role_mapping = {
+        "STUDENT": "student",
+        "PROJECT_SUPERVISOR": "projects_supervisor",
+        "LECTURER": "projects_supervisor",
+        "PROJECT_COORDINATOR": "projects_coordinator",
+        "projects_coordinator": "projects_coordinator",
+        "coordinator": "projects_coordinator"
+    }
+    user_type = role_mapping.get(current_user.role, current_user.role.lower() if current_user.role else "projects_coordinator")
+    
+    sender_data = {
+        "participantId": ObjectId(current_user.id),
+        "userType": user_type,
+        "email": current_user.email
+    }
+    
     message_data = {
-        "sender": sender.model_dump(),
+        "sender": sender_data,
         "recipients": [recipient.model_dump() for recipient in message_request.recipients],
         "text": message_request.text,
         "replies": []

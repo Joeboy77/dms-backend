@@ -36,8 +36,16 @@ class CommunicationController:
         message_data["createdAt"] = datetime.now()
         message_data["updatedAt"] = datetime.now()
 
-        # Generate ObjectIds for recipients if not provided
+        if "sender" in message_data and "participantId" in message_data["sender"]:
+            sender_id = message_data["sender"]["participantId"]
+            if isinstance(sender_id, str):
+                message_data["sender"]["participantId"] = ObjectId(sender_id)
+
         for recipient in message_data.get("recipients", []):
+            if "participantId" in recipient:
+                recipient_id = recipient["participantId"]
+                if isinstance(recipient_id, str):
+                    recipient["participantId"] = ObjectId(recipient_id)
             if not recipient.get("_id"):
                 recipient["_id"] = ObjectId()
 
@@ -294,7 +302,8 @@ class CommunicationController:
                     "title": lecturer.get("title", ""),
                     "position": lecturer.get("position", ""),
                     "relationship": "supervisor",
-                    "academic_id": lecturer.get("academicId", "")
+                    "academic_id": lecturer.get("academicId", ""),
+                    "image": lecturer.get("image")
                 })
 
         elif user_type.lower() == "admin":
